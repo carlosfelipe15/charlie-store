@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Rodi Mercado · Ecommerce</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; font-family: 'Manrope', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  button { font-family: inherit; }
+  input, select, textarea { font-family: inherit; }
+</style>
+</head>
+<body>
+<template id="__bundler_thumbnail">
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100" height="100" rx="20" fill="#E63946"/>
+  <g transform="translate(30,28)" fill="#fff">
+    <circle cx="6" cy="6" r="6"/>
+    <text x="16" y="32" font-family="Georgia, serif" font-weight="800" font-size="34" fill="#fff">r</text>
+    <circle cx="34" cy="40" r="5" fill="#FFC233"/>
+  </g>
+</svg>
+</template>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="browser-window.jsx"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="tokens.jsx"></script>
+<script type="text/babel" src="data.jsx"></script>
+<script type="text/babel" src="shared.jsx"></script>
+<script type="text/babel" src="home.jsx"></script>
+<script type="text/babel" src="pdp.jsx"></script>
+<script type="text/babel" src="pages.jsx"></script>
+<script type="text/babel" src="mobile.jsx"></script>
+
+<script type="text/babel">
+// ─── App: assemble the canvas ────────────────────────────────────────────
+
+// Each desktop artboard wraps its page in a ChromeWindow showing the
+// matching Medusa-style URL — so the user can see how the storefront's
+// routing maps to each screen.
+function DesktopFrame({ url, children, height = 2400 }) {
+  return (
+    <ChromeWindow
+      tabs={[{ title: 'Rodi Mercado · Tu mercado en 90 min' }]}
+      activeIndex={0}
+      url={url}
+      width={1440}
+      height={height}
+    >
+      <div style={{ width: '100%', minHeight: '100%' }}>
+        {children}
+      </div>
+    </ChromeWindow>
+  );
+}
+
+function PhoneFrame({ children, dark = false }) {
+  return (
+    <IOSDevice width={402} height={874} dark={dark}>
+      <div style={{ width: '100%', height: '100%', overflow:'auto', background:'#fff', paddingTop: 62, paddingBottom: 34, boxSizing:'border-box' }}>
+        {children}
+      </div>
+    </IOSDevice>
+  );
+}
+
+function App() {
+  return (
+    <DesignCanvas>
+      {/* ── HOME ──────────────────────────────────────────────────────── */}
+      <DCSection
+        id="home"
+        title="Home"
+        subtitle="Ruta Medusa: /[countryCode]/store · pantalla principal"
+      >
+        <DCArtboard id="home" label="Home · Supermercado clásico" width={1440} height={4580}>
+          <DesktopFrame url="rodi.com.co/co/store" height={4580}>
+            <HomeV1/>
+          </DesktopFrame>
+        </DCArtboard>
+      </DCSection>
+
+      {/* ── PDP ───────────────────────────────────────────────────────── */}
+      <DCSection
+        id="pdp"
+        title="Detalle de producto"
+        subtitle="Ruta Medusa: /[countryCode]/products/[handle]"
+      >
+        <DCArtboard id="pdp" label="Detalle de producto" width={1440} height={2420}>
+          <DesktopFrame url="rodi.com.co/co/products/airfryer-philips-xl-6l" height={2420}>
+            <PDPv1/>
+          </DesktopFrame>
+        </DCArtboard>
+      </DCSection>
+
+      {/* ── Listing & Search ──────────────────────────────────────────── */}
+      <DCSection
+        id="browse"
+        title="Listado y búsqueda"
+        subtitle="Rutas Medusa: /[countryCode]/categories/[handle] · /[countryCode]/results/[q]"
+      >
+        <DCArtboard id="category" label="Listado por categoría + filtros" width={1440} height={3100}>
+          <DesktopFrame url="rodi.com.co/co/categories/despensa" height={3100}>
+            <CategoryPage/>
+          </DesktopFrame>
+        </DCArtboard>
+        <DCArtboard id="search" label="Resultados de búsqueda" width={1440} height={2100}>
+          <DesktopFrame url='rodi.com.co/co/results/leche' height={2100}>
+            <SearchPage/>
+          </DesktopFrame>
+        </DCArtboard>
+      </DCSection>
+
+      {/* ── Cart / Checkout / Confirmation ────────────────────────────── */}
+      <DCSection
+        id="purchase"
+        title="Carrito, pago y confirmación"
+        subtitle="Rutas Medusa: /[countryCode]/cart · /[countryCode]/checkout · /[countryCode]/order/confirmed/[id]"
+      >
+        <DCArtboard id="cart" label="Carrito" width={1440} height={2060}>
+          <DesktopFrame url="rodi.com.co/co/cart" height={2060}>
+            <CartPage/>
+          </DesktopFrame>
+        </DCArtboard>
+        <DCArtboard id="checkout" label="Checkout · pago" width={1440} height={1450}>
+          <DesktopFrame url="rodi.com.co/co/checkout" height={1450}>
+            <CheckoutPage/>
+          </DesktopFrame>
+        </DCArtboard>
+        <DCArtboard id="confirmation" label="Confirmación de pedido" width={1440} height={1300}>
+          <DesktopFrame url="rodi.com.co/co/order/confirmed/order_RDM2026038124" height={1300}>
+            <ConfirmationPage/>
+          </DesktopFrame>
+        </DCArtboard>
+      </DCSection>
+
+      {/* ── Auth & Account ────────────────────────────────────────────── */}
+      <DCSection
+        id="account"
+        title="Cuenta del usuario"
+        subtitle="Rutas Medusa: /[countryCode]/account/login · /[countryCode]/account"
+      >
+        <DCArtboard id="auth" label="Ingreso / registro" width={1440} height={780}>
+          <DesktopFrame url="rodi.com.co/co/account/login" height={780}>
+            <AuthPage/>
+          </DesktopFrame>
+        </DCArtboard>
+        <DCArtboard id="me" label="Cuenta · resumen y pedidos" width={1440} height={1880}>
+          <DesktopFrame url="rodi.com.co/co/account" height={1880}>
+            <AccountPage/>
+          </DesktopFrame>
+        </DCArtboard>
+      </DCSection>
+
+      {/* ── Mobile ───────────────────────────────────────────────────── */}
+      <DCSection
+        id="mobile"
+        title="Versión móvil"
+        subtitle="Las mismas rutas, pero responsive — listas para un PWA o app envolvente"
+      >
+        <DCArtboard id="m-home" label="Inicio" width={440} height={910}>
+          <PhoneFrame><MHome/></PhoneFrame>
+        </DCArtboard>
+        <DCArtboard id="m-cat" label="Categoría" width={440} height={910}>
+          <PhoneFrame><MCategory/></PhoneFrame>
+        </DCArtboard>
+        <DCArtboard id="m-pdp" label="Detalle de producto" width={440} height={910}>
+          <PhoneFrame><MPDP/></PhoneFrame>
+        </DCArtboard>
+        <DCArtboard id="m-cart" label="Carrito" width={440} height={910}>
+          <PhoneFrame><MCart/></PhoneFrame>
+        </DCArtboard>
+        <DCArtboard id="m-checkout" label="Pago" width={440} height={910}>
+          <PhoneFrame><MCheckout/></PhoneFrame>
+        </DCArtboard>
+        <DCArtboard id="m-confirm" label="Confirmación" width={440} height={910}>
+          <PhoneFrame><MConfirmation/></PhoneFrame>
+        </DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
