@@ -2,7 +2,7 @@ import { notFound } from "next/navigation"
 import { Suspense } from "react"
 
 import { HttpTypes } from "@medusajs/types"
-import { getCategoryEmoji } from "@lib/util/category-emoji"
+import { getCategoryVisual } from "@lib/util/category-emoji"
 import SkeletonProductGrid from "@modules/skeletons/templates/skeleton-product-grid"
 import RodiCategoryChips from "@modules/store/components/rodi-category-chips"
 import RodiPlpFilters from "@modules/store/components/rodi-plp-filters"
@@ -37,7 +37,7 @@ export default function CategoryTemplate({
       <RodiPlpHero
         title={category.name ?? "Categoría"}
         subtitle={category.description ?? undefined}
-        emoji={getCategoryEmoji(category.name)}
+        emoji={getCategoryVisual(category.handle, category.name).emoji}
       />
       {(subcategories.length > 0 || category.parent_category) && (
         <RodiCategoryChips

@@ -1,6 +1,6 @@
 "use client"
 
-import { getCategoryEmoji } from "@lib/util/category-emoji"
+import { getCategoryVisual } from "@lib/util/category-emoji"
 import { HttpTypes } from "@medusajs/types"
 import { RodiBadge, RodiBtnLink } from "@modules/common/components/rodi"
 import { RodiIconChevron } from "@modules/common/icons/rodi"
@@ -58,7 +58,7 @@ export default function RodiMegaMenu({
             >
               <span className="inline-flex items-center gap-2.5 min-w-0">
                 <span className="text-lg shrink-0" aria-hidden>
-                  {getCategoryEmoji(cat.name)}
+                  {getCategoryVisual(cat.handle, cat.name).emoji}
                 </span>
                 <span className="truncate">{cat.name}</span>
               </span>

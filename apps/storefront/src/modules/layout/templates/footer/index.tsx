@@ -1,13 +1,16 @@
 import { listCategories } from "@lib/data/categories"
 import { listCollections } from "@lib/data/collections"
+import { listRegions } from "@lib/data/regions"
 import { RodiLogo } from "@modules/common/components/rodi"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import RegionBadge from "@modules/layout/components/region-badge"
 
 export default async function Footer() {
   const { collections } = await listCollections({
     fields: "*products",
   })
   const productCategories = await listCategories()
+  const regions = await listRegions().catch(() => null)
 
   const topCategories =
     productCategories?.filter((c) => !c.parent_category).slice(0, 6) ?? []
@@ -112,7 +115,10 @@ export default async function Footer() {
 
         <div className="flex flex-col gap-3 small:flex-row small:items-center small:justify-between pt-5 text-xs text-white/45">
           <p>© {new Date().getFullYear()} Rodi Mercado · Charlie Store</p>
-          <p className="font-bold text-rm-yellow">🇨🇴 Colombia · COP</p>
+          <RegionBadge
+            regions={regions}
+            className="font-bold text-rm-yellow"
+          />
         </div>
       </div>
     </footer>
