@@ -2,6 +2,7 @@
 
 import { applyPromotions } from "@lib/data/cart"
 import { RodiBtn } from "@modules/common/components/rodi"
+import { useToast } from "@modules/common/components/ui"
 import { HttpTypes } from "@medusajs/types"
 import { FormEvent, useState } from "react"
 
@@ -13,6 +14,7 @@ export default function RodiCartDiscount({ cart }: RodiCartDiscountProps) {
   const [code, setCode] = useState("")
   const [error, setError] = useState("")
   const [pending, setPending] = useState(false)
+  const { showToast } = useToast()
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -24,14 +26,16 @@ export default function RodiCartDiscount({ cart }: RodiCartDiscountProps) {
       .filter((p) => p.code)
       .map((p) => p.code!)
 
-    try {
-      await applyPromotions([...codes, code.trim()])
+    const result = await applyPromotions([...codes, code.trim()])
+    if (result.success) {
       setCode("")
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Cupón no válido")
-    } finally {
-      setPending(false)
+      showToast("Cupón aplicado.", "success")
+    } else {
+      const message = result.error || "Cupón no válido."
+      setError(message)
+      showToast(message, "error")
     }
+    setPending(false)
   }
 
   return (

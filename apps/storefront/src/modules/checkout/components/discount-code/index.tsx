@@ -1,6 +1,13 @@
 "use client"
 
-import { Badge, Heading, Input, Label, Text } from "@modules/common/components/ui"
+import {
+  Badge,
+  Heading,
+  Input,
+  Label,
+  Text,
+  useToast,
+} from "@modules/common/components/ui"
 import React from "react"
 
 import { applyPromotions } from "@lib/data/cart"
@@ -17,6 +24,7 @@ type DiscountCodeProps = {
 const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
   const [isOpen, setIsOpen] = React.useState(false)
   const [errorMessage, setErrorMessage] = React.useState("")
+  const { showToast } = useToast()
 
   const { promotions = [] } = cart
   const removePromotionCode = async (code: string) => {
@@ -24,9 +32,12 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
       (promotion) => promotion.code !== code
     )
 
-    await applyPromotions(
+    const result = await applyPromotions(
       validPromotions.filter((p) => p.code !== undefined).map((p) => p.code!)
     )
+    if (!result.success) {
+      showToast(result.error || "No se pudo quitar el código.", "error")
+    }
   }
 
   const addPromotionCode = async (formData: FormData) => {
@@ -42,10 +53,13 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
       .map((p) => p.code!)
     codes.push(code.toString())
 
-    try {
-      await applyPromotions(codes)
-    } catch (e) {
-      setErrorMessage(e instanceof Error ? e.message : String(e))
+    const result = await applyPromotions(codes)
+    if (result.success) {
+      showToast("Código de promoción aplicado.", "success")
+    } else {
+      const message = result.error || "Código de promoción no válido."
+      setErrorMessage(message)
+      showToast(message, "error")
     }
 
     if (input) {

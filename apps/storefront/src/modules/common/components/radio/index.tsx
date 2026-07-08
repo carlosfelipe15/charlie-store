@@ -4,7 +4,8 @@ const Radio = ({ checked, 'data-testid': dataTestId }: { checked: boolean, 'data
       <button
         type="button"
         role="radio"
-        aria-checked="true"
+        aria-checked={checked}
+        tabIndex={-1}
         data-state={checked ? "checked" : "unchecked"}
         className="group relative flex h-5 w-5 items-center justify-center outline-none"
         data-testid={dataTestId || 'radio-button'}

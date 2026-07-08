@@ -1,7 +1,7 @@
 "use server"
 
 import { sdk } from "@lib/config"
-import medusaError from "@lib/util/medusa-error"
+import medusaError, { getMedusaErrorMessage } from "@lib/util/medusa-error"
 import { HttpTypes } from "@medusajs/types"
 import { revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
@@ -24,7 +24,7 @@ import { getLocale } from "./locale-actions"
 export async function retrieveCart(cartId?: string, fields?: string) {
   const id = cartId || (await getCartId())
   fields ??=
-    "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name"
+    "*items, *region, *items.product, *items.variant, +items.variant.inventory_quantity, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name"
 
   if (!id) {
     return null
@@ -255,27 +255,36 @@ export async function initiatePaymentSession(
     .catch(medusaError)
 }
 
-export async function applyPromotions(codes: string[]) {
+export type ApplyPromotionsResult = { success: boolean; error: string | null }
+
+export async function applyPromotions(
+  codes: string[]
+): Promise<ApplyPromotionsResult> {
   const cartId = await getCartId()
 
   if (!cartId) {
-    throw new Error("No existing cart found")
+    return { success: false, error: "No se encontró un carrito activo." }
   }
 
   const headers = {
     ...(await getAuthHeaders()),
   }
 
-  return sdk.store.cart
-    .update(cartId, { promo_codes: codes }, {}, headers)
-    .then(async () => {
-      const cartCacheTag = await getCacheTag("carts")
-      revalidateTag(cartCacheTag)
+  // Return a serializable error instead of throwing: thrown server-action errors
+  // are masked by Next.js in production, which left invalid promo codes silent.
+  try {
+    await sdk.store.cart.update(cartId, { promo_codes: codes }, {}, headers)
 
-      const fulfillmentCacheTag = await getCacheTag("fulfillment")
-      revalidateTag(fulfillmentCacheTag)
-    })
-    .catch(medusaError)
+    const cartCacheTag = await getCacheTag("carts")
+    revalidateTag(cartCacheTag)
+
+    const fulfillmentCacheTag = await getCacheTag("fulfillment")
+    revalidateTag(fulfillmentCacheTag)
+
+    return { success: true, error: null }
+  } catch (error) {
+    return { success: false, error: getMedusaErrorMessage(error) }
+  }
 }
 
 export async function applyGiftCard(code: string) {
@@ -326,10 +335,9 @@ export async function submitPromotionForm(
   formData: FormData
 ) {
   const code = formData.get("code") as string
-  try {
-    await applyPromotions([code])
-  } catch (e: any) {
-    return e.message
+  const result = await applyPromotions([code])
+  if (!result.success) {
+    return result.error
   }
 }
 

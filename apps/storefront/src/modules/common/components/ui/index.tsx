@@ -10,7 +10,9 @@ import {
   ThHTMLAttributes,
 } from "react"
 
-// TODO: Add Toaster component back when needed for notifications
+// Toast notifications (lightweight, dependency-free)
+export { ToastProvider, useToast } from "./toast"
+export type { ToastType } from "./toast"
 
 // Re-export clsx as clx for compatibility
 export { clsx as clx }
