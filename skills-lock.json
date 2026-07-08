@@ -24,6 +24,12 @@
       "sourceType": "github",
       "skillPath": "plugins/learn-medusa/skills/learning-medusa/SKILL.md",
       "computedHash": "a410dc519887289918c92acff981d3fc2711ea13d6964b0f40811cda14d4c554"
+    },
+    "storefront-best-practices": {
+      "source": "medusajs/medusa-agent-skills",
+      "sourceType": "github",
+      "skillPath": "plugins/ecommerce-storefront/skills/storefront-best-practices/SKILL.md",
+      "computedHash": "e0a9b5a1ca1d4e5eb488cf4366a28a8317000ddaa2eb62a06a35b0c6b0f06085"
     }
   }
 }
