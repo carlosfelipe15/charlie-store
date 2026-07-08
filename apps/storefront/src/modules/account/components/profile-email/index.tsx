@@ -1,70 +1,31 @@
-"use client"
-
-import React, { useEffect, useActionState } from "react";
-
-import Input from "@modules/common/components/input"
-
-import AccountInfo from "../account-info"
 import { HttpTypes } from "@medusajs/types"
-// import { updateCustomer } from "@lib/data/customer"
 
 type MyInformationProps = {
   customer: HttpTypes.StoreCustomer
 }
 
+// Medusa v2's store customer-update API deliberately omits `email` from the
+// updatable fields (`StoreUpdateCustomer` type excludes it) — changing a
+// customer's login email isn't exposed on this endpoint. Shown read-only
+// with an explanation instead of a form that silently did nothing.
 const ProfileEmail: React.FC<MyInformationProps> = ({ customer }) => {
-  const [successState, setSuccessState] = React.useState(false)
-
-  // TODO: It seems we don't support updating emails now?
-  const updateCustomerEmail = (
-    _currentState: Record<string, unknown>,
-    _formData: FormData
-  ) => {
-    try {
-      // email: formData.get("email") as string
-      return { success: true, error: null }
-    } catch (error) {
-      return { success: false, error: String(error) }
-    }
-  }
-
-  const [state, formAction] = useActionState(updateCustomerEmail, {
-    error: null as string | null,
-    success: false,
-  })
-
-  const clearState = () => {
-    setSuccessState(false)
-  }
-
-  useEffect(() => {
-    setSuccessState(state.success)
-  }, [state])
-
   return (
-    <form action={formAction} className="w-full">
-      <AccountInfo
-        label="Email"
-        currentInfo={`${customer.email}`}
-        isSuccess={successState}
-        isError={!!state.error}
-        errorMessage={state.error || undefined}
-        clearState={clearState}
-        data-testid="account-email-editor"
-      >
-        <div className="grid grid-cols-1 gap-y-2">
-          <Input
-            label="Email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            defaultValue={customer.email}
-            data-testid="email-input"
-          />
+    <div className="w-full" data-testid="account-email-editor">
+      <div className="flex items-end justify-between text-small-regular">
+        <div className="flex flex-col">
+          <span className="uppercase text-ui-fg-base">
+            Correo electrónico
+          </span>
+          <span className="font-semibold" data-testid="current-info">
+            {customer.email}
+          </span>
         </div>
-      </AccountInfo>
-    </form>
+      </div>
+      <p className="text-xs text-ui-fg-subtle mt-1.5">
+        El correo de acceso no se puede cambiar desde aquí por el momento.
+        Escríbenos si necesitas actualizarlo.
+      </p>
+    </div>
   )
 }
 
