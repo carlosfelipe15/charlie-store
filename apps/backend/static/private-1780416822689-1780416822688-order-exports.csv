@@ -1,2 +1,0 @@
-Order_ID,Display_ID,Order status,Date,Customer First name,Customer Last name,Customer Email,Customer ID,Shipping Address 1,Shipping Address 2,Shipping Country Code,Shipping City,Shipping Postal Code,Shipping Region ID,Fulfillment Status,Payment Status,Subtotal,Shipping Total,Discount Total,Tax Total,Total,Currency Code
-order_01KT4HRAF348HP5DKC6P4TZQD4,1,pending,2026-06-02T16:13:04.874Z,,,juan@email.com,cus_01KT4HQDH3C0T1CSF88RHK2X7G,Muy cerca,,gb,sd,as,reg_01KRYAHGSXVF20N0PBMZ8NPNTG,not_fulfilled,authorized,20,10,0,0,20,eur

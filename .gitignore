@@ -54,3 +54,15 @@ yarn-error.log*
 ehthumbs.db
 Thumbs.db
 **/.DS_Store
+
+.playwright-mcp
+
+# Local editor / tool config (personal, not shared)
+.vscode
+.claude/settings.local.json
+
+# Build info
+**/tsconfig.tsbuildinfo
+
+# Medusa local file uploads (dev-only storage, not source)
+apps/backend/static
