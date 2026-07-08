@@ -40,14 +40,21 @@ modules: [{ resolve: "./src/modules/brand" }]
 
 Permite consultas como `fields: ["id", "name", "products.*"]` en brands o `+brand.*` en productos.
 
-### 3. Workflow create-brand
+### 3. Workflows
 
 ```
-workflows/create-brand.ts          → orquestación
+workflows/create-brand.ts          → orquestación create
 workflows/steps/create-brand.ts    → createBrands + deleteBrands en compensación
+workflows/update-brand.ts          → orquestación update
+workflows/steps/update-brand.ts    → updateBrands + compensación (revierte al nombre previo)
+workflows/delete-brand.ts          → orquestación delete
+workflows/steps/delete-brand.ts    → removeRemoteLinkStep (limpia links product↔brand) + deleteBrands;
+                                       compensación recrea la marca con el mismo id
 ```
 
-Entrada: `{ name: string }`. Salida: entidad brand creada.
+`create`: entrada `{ name: string }`, salida entidad brand creada.
+`update`: entrada `{ id: string, name: string }`.
+`delete`: entrada `{ id: string }` — antes de borrar, ejecuta `removeRemoteLinkStep({[BRAND_MODULE]: {brand_id: input.id}})` para no dejar links huérfanos en la tabla de module link (mismo patrón que `deleteCollectionsWorkflow` del core). Es **hard delete sin bloqueo** aunque la marca tenga productos asignados — ver "Decisiones clave" abajo.
 
 ### 4. API Admin
 
@@ -64,15 +71,33 @@ Entrada: `{ name: string }`. Salida: entidad brand creada.
 - Ejecuta `createBrandWorkflow`
 - Respuesta: `{ brand }`
 
+**`POST /admin/brands/:id`**
+
+- Body: `{ name: string }` (Zod: `PostAdminUpdateBrand`)
+- Ejecuta `updateBrandWorkflow`
+- Respuesta: `{ brand }`
+
+**`DELETE /admin/brands/:id`**
+
+- Ejecuta `deleteBrandWorkflow`
+- Respuesta: `{ id, object: "brand", deleted: true }`
+
 Archivos:
 
-- `api/admin/brands/route.ts`
-- `api/admin/brands/validators.ts`
+- `api/admin/brands/route.ts` (GET, POST)
+- `api/admin/brands/[id]/route.ts` (POST update, DELETE)
+- `api/admin/brands/validators.ts` (`PostAdminCreateBrand`, `PostAdminUpdateBrand`)
 - Reglas en `api/middlewares.ts`
 
-### 5. Asociar marca al crear producto
+### 5. API Store (lectura pública)
 
-**Middleware** en `POST /admin/products`:
+**`GET /store/brands`** — `api/store/brands/route.ts`
+
+Listado público de solo lectura (misma forma que el GET admin, vía `query.graph` + `req.queryConfig`); pensado para filtro de marca en el PLP o la franja de marcas del home. Ya consumido por el storefront: `lib/data/brands.ts` y `modules/home/components/rodi-brands-strip/`.
+
+### 6. Asociar marca a un producto
+
+**Al crear** — middleware en `POST /admin/products`:
 
 ```typescript
 additionalDataValidator: {
@@ -80,12 +105,26 @@ additionalDataValidator: {
 }
 ```
 
-**Hook** `workflows/hooks/created-product.ts` en `createProductsWorkflow.hooks.productsCreated`:
+Hook `workflows/hooks/created-product.ts` en `createProductsWorkflow.hooks.productsCreated`:
 
 1. Si no hay `additional_data.brand_id`, no hace nada
 2. Verifica que la marca existe (`retrieveBrand`)
 3. Crea links `{ product_id, brand_id }` para cada producto creado
 4. Rollback: `link.dismiss(links)`
+
+**Al actualizar** (producto ya existente) — middleware en `POST /admin/products/:id`:
+
+```typescript
+additionalDataValidator: {
+  brand_id: z.string().nullable().optional()
+}
+```
+
+Hook `workflows/hooks/updated-product.ts` en `updateProductsWorkflow.hooks.productsUpdated`:
+
+- `additional_data.brand_id` ausente (`undefined`) → no hace nada
+- viene un id → desvincula el link anterior (si existía) y crea el nuevo (evita duplicar links al reasignar)
+- viene `null` → solo desvincula
 
 Ejemplo de creación de producto con marca (API admin):
 
@@ -100,18 +139,22 @@ POST /admin/products
 }
 ```
 
-### 6. Admin UI
+### 7. Admin UI
 
 **Página Brands** — `admin/routes/brands/page.tsx`
 
 - Menú lateral: label "Brands", icono `TagSolid`
 - Tabla paginada (15 filas) vía `sdk.client.fetch('/admin/brands')`
 - Columnas: ID, Name, número de Products
+- Botón "Create" → `FocusModal` con input de nombre → `POST /admin/brands`
+- Columna de acciones por fila (`columnHelper.action`): Edit (abre `FocusModal` prellenado → `POST /admin/brands/:id`) y Delete en grupo separado como acción destructiva
+- Delete usa `usePrompt()` (`variant: "danger"`); si la marca tiene productos asignados, el mensaje lo indica explícitamente antes de confirmar
 
 **Widget producto** — `admin/widgets/product-brand.tsx`
 
 - Zona: `product.details.before`
-- Muestra nombre de marca con `sdk.admin.product.retrieve(id, { fields: "+brand.*" })`
+- Editable: `Select` con la lista de marcas + botón "Guardar" que llama `POST /admin/products/:id` con `additional_data.brand_id` (o `null` para quitar la marca)
+- Usa `sdk.client.fetch` genérico en vez de `sdk.admin.product.update` porque `HttpTypes.AdminUpdateProduct` no tipa `additional_data.brand_id`
 
 ## Flujo de datos (diagrama)
 
@@ -136,14 +179,19 @@ sequenceDiagram
   API-->>Admin: JSON
 ```
 
+## Decisiones clave
+
+- **Hard delete + limpieza explícita de links**, no soft-delete ni bloqueo de borrado si la marca tiene productos. El riesgo real no es "borrar con relaciones" sino dejar filas huérfanas en la tabla de link (`product↔brand` es un module link entre módulos aislados, no una FK) — se resuelve con `removeRemoteLinkStep` antes del delete, igual que `deleteCollectionsWorkflow` en core.
+- **Asignación de marca vive en el widget del PDP, no en el wizard nativo de creación de producto** — el create-product de Medusa no expone un punto de extensión limpio para campos custom en su payload; el widget de detalle sí, y cubre creación y edición con una sola implementación.
+- **Sin unicidad en `name`** — el validator solo exige `z.string()`. Marcas duplicadas son posibles hoy.
+
 ## Extender Brands
 
 | Necesidad | Dónde actuar |
 |-----------|--------------|
 | Campos extra (logo, slug) | Modelo + migración + validators + UI |
-| Editar / eliminar marca | Workflows update/delete + rutas POST/DELETE |
-| API store pública | `api/store/brands/route.ts` + CORS store |
-| Filtro por marca en storefront | Store route o `query.graph` con publishable key |
+| Unicidad de `name` | Validator + constraint en migración |
+| Filtro por marca en storefront (PLP) | Ya existe `GET /store/brands`; falta UI de filtro en `store/` |
 | Seed de marcas | Script en `migration-scripts/` o workflow en seed |
 
 ## Archivos (mapa rápido)
@@ -153,16 +201,25 @@ apps/backend/src/
 ├── modules/brand/
 ├── links/product-brand.ts
 ├── workflows/
-│   ├── create-brand.ts
-│   ├── steps/create-brand.ts
-│   └── hooks/created-product.ts
+│   ├── create-brand.ts + steps/create-brand.ts
+│   ├── update-brand.ts + steps/update-brand.ts
+│   ├── delete-brand.ts + steps/delete-brand.ts
+│   ├── hooks/created-product.ts
+│   └── hooks/updated-product.ts
 ├── api/admin/brands/
-│   ├── route.ts
+│   ├── route.ts            # GET, POST
+│   ├── [id]/route.ts       # POST (update), DELETE
 │   └── validators.ts
-├── api/middlewares.ts          # brands + brand_id en products
+├── api/store/brands/route.ts   # GET público
+├── api/middlewares.ts          # brands + brand_id en products (create y update)
 └── admin/
-    ├── routes/brands/page.tsx
-    └── widgets/product-brand.tsx
+    ├── routes/brands/page.tsx      # tabla + create/edit/delete
+    └── widgets/product-brand.tsx   # editable
+
+apps/storefront/src/
+├── lib/data/brands.ts
+├── lib/util/product-brand.ts
+└── modules/home/components/rodi-brands-strip/
 ```
 
 ## Lecciones del repo

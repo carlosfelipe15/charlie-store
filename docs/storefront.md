@@ -78,13 +78,16 @@ Para llamar **rutas custom del backend** (ej. futuras APIs de brands en store), 
 
 `design-reference/` — mockups y canvas de diseño (“Rodi Mercado”, ecommerce-test). Referencia visual para futuras iteraciones de UI; **no** importar directamente en rutas de producción sin adaptar a `modules/` y tokens del proyecto.
 
-## Estado respecto a Brands
+## Brands y Reviews en el storefront
 
-El backend expone marcas en admin y links con productos, pero **el storefront no muestra marcas aún**. Implementación típica:
+Ambas features custom del backend ya están conectadas al storefront:
 
-1. Ruta store `GET /store/brands` (o ampliar producto con `fields=+brand.*`)
-2. Funciones en `lib/data/brands.ts`
-3. Componentes en PDP/listados según diseño
+| Feature | Datos | UI |
+|---------|-------|-----|
+| Brands | `lib/data/brands.ts`, `lib/util/product-brand.ts` | `modules/home/components/rodi-brands-strip/`, `modules/products/components/rodi-product-card/` |
+| Reviews | `lib/data/reviews.ts` | `modules/products/components/rodi-product-reviews/` (PDP), badge de rating en `modules/products/templates/product-info/`, stat sitewide en el panel de login (`account/@login`) |
+
+Detalle de cada una: [custom-features/brands.md](./custom-features/brands.md), [custom-features/reviews.md](./custom-features/reviews.md). Filtro por marca en el listado (PLP) todavía no existe — el backend ya expone `GET /store/brands` para eso.
 
 ## Añadir una página nueva
 

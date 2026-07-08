@@ -12,7 +12,7 @@ flowchart LR
   subgraph backend [Medusa Backend :9000]
     API[API Routes\nadmin + store]
     WF[Workflows]
-    MOD[Módulos custom\nej. Brand]
+    MOD[Módulos custom\nBrand, Review]
     CORE[Módulos Medusa\nProduct, Cart, Order...]
     DB[(PostgreSQL)]
   end
@@ -70,7 +70,7 @@ Turbo coordina `build`, `dev`, `lint`, `test` y `seed` sin imponer dependencias 
 
 ## Extensión del core de Medusa
 
-El proyecto usa **workflow hooks** para enganchar flujos del core sin modificarlos. Ejemplo: al crear productos (`createProductsWorkflow`), se enlaza `brand_id` desde `additional_data` ([brands.md](./custom-features/brands.md)).
+El proyecto usa **workflow hooks** para enganchar flujos del core sin modificarlos. Ejemplo: al crear y actualizar productos (`createProductsWorkflow` / `updateProductsWorkflow`), se enlaza/reasigna `brand_id` desde `additional_data` ([brands.md](./custom-features/brands.md)).
 
 ## Referencia de diseño (storefront)
 

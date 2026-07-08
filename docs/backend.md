@@ -5,7 +5,7 @@ Medusa v2 con admin embebido. Código fuente en `apps/backend/src/`.
 ## Configuración
 
 - **Entrada Medusa**: `medusa-config.ts`
-- **Módulos registrados**: array `modules[]` — actualmente incluye `./src/modules/brand`
+- **Módulos registrados**: array `modules[]` — actualmente incluye `./src/modules/brand` y `./src/modules/review`
 - **Env**: `apps/backend/.env` (plantilla: `.env.template`)
 
 ## Árbol de directorios relevante
@@ -76,7 +76,8 @@ SDK admin: `admin/lib/sdk.ts` — `baseUrl` relativo `/` en dev (proxy Vite).
 
 ### Module link
 
-`links/product-brand.ts`: producto (lista) ↔ marca (uno). Permite campos `products.*` y `brand.*` en `query.graph`.
+- `links/product-brand.ts`: producto (lista) ↔ marca (uno). Permite campos `products.*` y `brand.*` en `query.graph`.
+- `links/product-review.ts`: producto (uno) ↔ reseña (lista) — cardinalidad invertida respecto a brand, ver [custom-features/reviews.md](./custom-features/reviews.md#2-module-link).
 
 ## API custom actual
 
@@ -84,16 +85,20 @@ SDK admin: `admin/lib/sdk.ts` — `baseUrl` relativo `/` en dev (proxy Vite).
 |--------|------|-------------|
 | `GET` | `/admin/brands` | Lista paginada (`limit`, `offset`); fields default incluyen `products.*` |
 | `POST` | `/admin/brands` | Body `{ name: string }` → workflow create-brand |
+| `POST` | `/admin/brands/:id` | Body `{ name: string }` → workflow update-brand |
+| `DELETE` | `/admin/brands/:id` | Workflow delete-brand (limpia links product↔brand antes de borrar) |
+| `GET` | `/store/brands` | Listado público de solo lectura |
+| `GET` | `/store/reviews` | Lista por `product_id` (opcional), paginado |
+| `POST` | `/store/reviews` | Requiere cliente autenticado; crea reseña + link vía workflow create-review |
+| `GET` | `/store/reviews/summary` | Agregado (promedio, conteo, distribución 1-5★); `product_id` opcional (sitewide si se omite) |
 | — | `/admin/custom`, `/store/custom` | Rutas placeholder del starter |
+
+Detalle completo de cada feature: [custom-features/brands.md](./custom-features/brands.md), [custom-features/reviews.md](./custom-features/reviews.md).
 
 ## Hooks en workflows core
 
-`workflows/hooks/created-product.ts` — suscrito a `createProductsWorkflow.hooks.productsCreated`:
-
-- Lee `additional_data.brand_id`
-- Valida que la marca exista
-- Crea links producto–marca
-- Compensación: `link.dismiss` en rollback
+- `workflows/hooks/created-product.ts` — suscrito a `createProductsWorkflow.hooks.productsCreated`: lee `additional_data.brand_id`, valida que la marca exista, crea links producto–marca; compensación `link.dismiss` en rollback.
+- `workflows/hooks/updated-product.ts` — suscrito a `updateProductsWorkflow.hooks.productsUpdated`: reasigna o desvincula `brand_id` en productos ya existentes (`undefined` no toca nada, id reasigna, `null` desvincula).
 
 ## Scripts npm
 

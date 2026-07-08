@@ -13,7 +13,7 @@ Este archivo es el punto de entrada para agentes (Cursor, Copilot, etc.) que tra
 
 Gestor de paquetes: **pnpm 10** (workspace). Orquestación: **Turbo**.
 
-## Documentación humana
+## Documentación humana (referencia viva — debe reflejar el código actual)
 
 | Documento | Contenido |
 |-----------|-----------|
@@ -23,6 +23,21 @@ Gestor de paquetes: **pnpm 10** (workspace). Orquestación: **Turbo**.
 | [docs/backend.md](docs/backend.md) | Estructura del backend y convenciones |
 | [docs/storefront.md](docs/storefront.md) | Estructura del storefront Next.js |
 | [docs/custom-features/brands.md](docs/custom-features/brands.md) | Módulo Brand (implementación de referencia) |
+| [docs/custom-features/reviews.md](docs/custom-features/reviews.md) | Módulo Review |
+
+Si `docs/` contradice el código, confía en el código y corrige el doc — no improvises sobre un doc desactualizado.
+
+## Memoria de trabajo (`.context/`)
+
+No es documentación de referencia, es el registro de trabajo del agente entre sesiones:
+
+| Ruta | Contenido |
+|------|-----------|
+| `.context/index.md` | Punto de entrada: fase actual, último feature shippeado |
+| `.context/backlog.md` | Bugs y deuda técnica activos (dinámico, actualizar al detectar/resolver) |
+| `.context/plans/<fecha>/FASE-N-*.md` | Planes de fase ya ejecutados, histórico |
+| `.context/features/<feature>.md` | Changelog + decisiones de cambios a una feature **posteriores** a su fase inicial (ver `features/brands.md`) |
+| `.context/reports/` | Auditorías puntuales archivadas — no confiar en ellas para el estado actual |
 
 ## Skills obligatorios (`.agents/skills/`)
 
@@ -56,18 +71,30 @@ Módulo (modelo + servicio CRUD)
 
 ## Funcionalidad custom actual
 
-El único dominio de negocio extendido implementado es **Brands** (marcas):
+Dos dominios de negocio extendidos, ambos siguiendo el patrón Module → Link → Workflow → API:
 
+**Brands** (marcas) — CRUD completo:
 - Módulo: `apps/backend/src/modules/brand/`
-- Workflow: `apps/backend/src/workflows/create-brand.ts`
-- API admin: `GET/POST /admin/brands`
-- Link producto↔marca: `apps/backend/src/links/product-brand.ts`
-- Hook al crear producto: `apps/backend/src/workflows/hooks/created-product.ts` (`brand_id` en `additional_data`)
-- Admin: página `/app/brands`, widget en detalle de producto
+- Workflows: `create-brand.ts`, `update-brand.ts`, `delete-brand.ts` (delete limpia links huérfanos con `removeRemoteLinkStep`)
+- API admin: `GET/POST /admin/brands`, `POST/DELETE /admin/brands/:id`
+- API store: `GET /store/brands`
+- Link producto↔marca: `apps/backend/src/links/product-brand.ts` (muchos productos → una marca)
+- Hooks: `workflows/hooks/created-product.ts` y `updated-product.ts` (`brand_id` en `additional_data`, en creación y edición de producto)
+- Admin: página `/app/brands` (CRUD), widget editable en detalle de producto
+- Storefront: ya consumido (`lib/data/brands.ts`, franja de marcas en home, product card)
 
 Detalle completo: [docs/custom-features/brands.md](docs/custom-features/brands.md).
 
-El storefront **aún no** expone marcas; cualquier trabajo ahí requiere el skill de storefront y posiblemente rutas store nuevas.
+**Reviews** (reseñas) — solo lectura/creación, sin admin UI todavía:
+- Módulo: `apps/backend/src/modules/review/`
+- Workflow: `create-review.ts` (crea reseña + link en un paso)
+- API store: `GET/POST /store/reviews`, `GET /store/reviews/summary` (promedio/conteo/distribución, por producto o sitewide)
+- Link producto↔reseña: `apps/backend/src/links/product-review.ts` (**cardinalidad invertida** respecto a brand: un producto → muchas reseñas, `isList: true` va en el lado `review`)
+- Storefront: sección de reseñas en PDP, badge de rating, stat sitewide en login (`lib/data/reviews.ts`)
+
+Detalle completo: [docs/custom-features/reviews.md](docs/custom-features/reviews.md).
+
+**Nota**: al registrar un módulo nuevo en `medusa-config.ts` o crear/editar un archivo en `src/links/`, reiniciar `medusa develop` completo — no recarga en caliente.
 
 ## Dónde colocar código nuevo
 
@@ -101,8 +128,17 @@ Backend (desde `apps/backend`):
 
 ```bash
 pnpm medusa db:migrate
+pnpm medusa db:generate          # tras editar un modelo en src/modules/<name>/models/
 pnpm medusa user -e admin@test.com -p <password>
 pnpm dev
+
+# Tests (cada uno es un TEST_TYPE distinto, ver jest.config.js)
+pnpm test:unit                     # **/src/**/__tests__/**/*.unit.spec.ts
+pnpm test:integration:modules      # **/src/modules/*/__tests__/**/*.ts
+pnpm test:integration:http         # **/integration-tests/http/*.spec.ts
+
+# Un solo archivo de test (cualquier suite):
+TEST_TYPE=unit NODE_OPTIONS=--experimental-vm-modules npx jest --runInBand path/to/file.unit.spec.ts
 ```
 
 ## Restricciones para agentes
@@ -113,6 +149,11 @@ pnpm dev
 - **No** modifiques `dtc-starter/` salvo petición explícita (copia de referencia del starter upstream).
 - Mantén el **alcance mínimo**: no refactorices código no relacionado con la tarea.
 - Tras cambios en modelos de módulo custom, recuerda migraciones (`pnpm medusa db:generate` en `apps/backend`).
+
+## Convenciones para Git & Commits 
+
+- **Idioma:** Todos los mensajes de commit, nombres de ramas y títulos de Pull Requests deben escribirse obligatoriamente en **inglés**.
+- **Especificación:** Sigue de forma estricta el estándar **Conventional Commits 1.0.0**.
 
 ## Verificación rápida
 
