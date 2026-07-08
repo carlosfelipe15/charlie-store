@@ -7,6 +7,7 @@ import ProductTabs from "@modules/products/components/product-tabs"
 import RelatedProducts from "@modules/products/components/related-products"
 import ProductInfo from "@modules/products/templates/product-info"
 import RodiPdpDelivery from "@modules/products/components/rodi-pdp-delivery"
+import RodiProductReviews from "@modules/products/components/rodi-product-reviews"
 import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products"
 import { notFound } from "next/navigation"
 import { HttpTypes } from "@medusajs/types"
@@ -78,6 +79,8 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           <ProductTabs product={product} />
         </div>
       </div>
+
+      <RodiProductReviews productId={product.id!} />
 
       <div data-testid="related-products-container">
         <Suspense fallback={<SkeletonRelatedProducts />}>

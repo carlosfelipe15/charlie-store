@@ -10,6 +10,7 @@ import {
   canQuickAddFromCard,
   getQuickAddVariantId,
 } from "@lib/util/product-variant"
+import { getProductBrandName } from "@lib/util/product-brand"
 import { HttpTypes } from "@medusajs/types"
 import { RodiBadge, RodiBtn, RodiBtnLink } from "@modules/common/components/rodi"
 import { RodiIconPlus } from "@modules/common/icons/rodi"
@@ -67,6 +68,7 @@ export default function RodiProductCard({
 
   const quickAddVariantId = getQuickAddVariantId(product)
   const quickAdd = canQuickAddFromCard(product)
+  const brandName = getProductBrandName(product)
   const onSale = cheapestPrice?.price_type === "sale"
   const saleLabel =
     onSale && cheapestPrice?.percentage_diff
@@ -199,6 +201,17 @@ export default function RodiProductCard({
         href={`/products/${product.handle}`}
         className="flex flex-col gap-1 min-h-[2.4em] flex-1"
       >
+        {brandName && (
+          <span
+            className={clsx(
+              "font-semibold uppercase tracking-wide text-rm-ink-4",
+              isCompact ? "text-[9px]" : "text-[10px]"
+            )}
+            data-testid="product-brand"
+          >
+            {brandName}
+          </span>
+        )}
         <p
           className={clsx(
             "font-semibold leading-snug text-rm-ink line-clamp-2 text-balance",

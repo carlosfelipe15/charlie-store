@@ -6,18 +6,23 @@ import { clsx } from "clsx"
 import Register from "@modules/account/components/register"
 import Login from "@modules/account/components/login"
 import RodiAuthPanel from "@modules/account/components/rodi-auth-panel"
+import { ReviewSummary } from "@lib/data/reviews"
 
 export enum LOGIN_VIEW {
   SIGN_IN = "sign-in",
   REGISTER = "register",
 }
 
-const LoginTemplate = () => {
+const LoginTemplate = ({
+  reviewSummary,
+}: {
+  reviewSummary?: ReviewSummary
+}) => {
   const [currentView, setCurrentView] = useState<LOGIN_VIEW>(LOGIN_VIEW.SIGN_IN)
 
   return (
     <div className="min-h-[calc(100vh-120px)] grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] bg-rm-paper -mx-[var(--content-padding,0)] small:mx-0 rounded-none small:rounded-rm-lg overflow-hidden border-0 small:border border-rm-line">
-      <RodiAuthPanel />
+      <RodiAuthPanel reviewSummary={reviewSummary} />
       <div className="flex flex-col justify-center px-6 py-10 small:px-12 lg:px-14">
         <div className="max-w-[420px] w-full mx-auto">
           <div className="flex gap-1 p-1 bg-rm-line-2 rounded-xl mb-7">
