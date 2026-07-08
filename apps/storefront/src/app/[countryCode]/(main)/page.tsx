@@ -4,8 +4,13 @@ import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
 import FeaturedProducts from "@modules/home/components/featured-products"
 import Hero from "@modules/home/components/hero"
+import RodiBrandsStrip from "@modules/home/components/rodi-brands-strip"
 import RodiCategoryTiles from "@modules/home/components/rodi-category-tiles"
+import RodiCuratedRow from "@modules/home/components/rodi-curated-row"
+import RodiFlashSale from "@modules/home/components/rodi-flash-sale"
+import RodiNewsletter from "@modules/home/components/rodi-newsletter"
 import RodiHomePromoCards from "@modules/home/components/rodi-promo-cards"
+import RodiPromoDuo from "@modules/home/components/rodi-promo-duo"
 import RodiTrustStrip from "@modules/home/components/rodi-trust-strip"
 
 export const metadata: Metadata = {
@@ -39,11 +44,27 @@ export default async function Home(props: {
       </section>
       <RodiTrustStrip />
       <RodiCategoryTiles />
+      <RodiFlashSale countryCode={countryCode} />
       <div className="py-8 content-container">
         <ul className="flex flex-col gap-y-10">
           <FeaturedProducts collections={collections} region={region} />
         </ul>
       </div>
+      <RodiCuratedRow
+        kicker="Frutas y verduras"
+        title="Recién cosechado"
+        categoryHandles={["frescos", "lacteos-huevos"]}
+        region={region}
+      />
+      <RodiPromoDuo />
+      <RodiCuratedRow
+        kicker="Hogar y cuidado"
+        title="Tu casa, lista"
+        categoryHandles={["aseo-personal", "limpieza", "mascotas", "electrodomesticos"]}
+        region={region}
+      />
+      <RodiBrandsStrip />
+      <RodiNewsletter />
     </>
   )
 }
