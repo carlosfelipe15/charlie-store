@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 export default function RootLayout(props: { children: React.ReactNode }) {
   return (
     <html
-      lang="en"
+      lang="es"
       data-mode="light"
       className={`${manrope.variable} ${bricolage.variable} ${jetbrainsMono.variable}`}
     >
