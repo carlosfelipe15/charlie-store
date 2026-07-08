@@ -301,6 +301,9 @@ export default async function initial_data_seed({
   ).run({
     input: {
       product_categories: [
+        // Demo apparel categories from the stock Medusa seed. Kept (not
+        // replaced) because they're the only categories with products today —
+        // needed for QA/testing until the real Rodi Mercado catalog is loaded.
         {
           name: "Shirts",
           is_active: true,
@@ -315,6 +318,79 @@ export default async function initial_data_seed({
         },
         {
           name: "Merch",
+          is_active: true,
+        },
+        // Rodi Mercado supermarket categories, ported from
+        // design-reference/ecommerce-test/data.jsx:13-27 (CATEGORIES). Subject
+        // to change; added without products for now — products land separately.
+        {
+          name: "Frutas y verduras",
+          handle: "frescos",
+          is_active: true,
+        },
+        {
+          name: "Despensa",
+          handle: "despensa",
+          is_active: true,
+        },
+        {
+          name: "Lácteos y huevos",
+          handle: "lacteos-huevos",
+          is_active: true,
+        },
+        {
+          name: "Carnes y pescados",
+          handle: "carnes",
+          is_active: true,
+        },
+        {
+          name: "Panadería",
+          handle: "panaderia",
+          is_active: true,
+        },
+        {
+          name: "Bebidas",
+          handle: "bebidas",
+          is_active: true,
+        },
+        {
+          name: "Snacks y dulces",
+          handle: "snacks-dulces",
+          is_active: true,
+        },
+        {
+          name: "Congelados",
+          handle: "congelados",
+          is_active: true,
+        },
+        {
+          name: "Aseo personal",
+          handle: "aseo-personal",
+          is_active: true,
+        },
+        {
+          name: "Limpieza del hogar",
+          handle: "limpieza",
+          is_active: true,
+        },
+        {
+          name: "Mascotas",
+          handle: "mascotas",
+          is_active: true,
+        },
+        {
+          name: "Bebé",
+          handle: "bebe",
+          is_active: true,
+        },
+        {
+          name: "Electrodomésticos",
+          handle: "electrodomesticos",
+          is_active: true,
+        },
+        {
+          name: "Farmacia",
+          handle: "farmacia",
           is_active: true,
         },
       ],
