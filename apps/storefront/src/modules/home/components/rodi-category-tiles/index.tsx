@@ -16,22 +16,30 @@ export default async function RodiCategoryTiles() {
         actionLabel="Ver todas"
         actionHref="/store"
       />
-      <div className="grid grid-cols-3 small:grid-cols-5 lg:grid-cols-7 gap-3 mt-4">
+      <div className="grid grid-cols-3 small:grid-cols-5 large:grid-cols-7 gap-3 mt-4">
         {topLevel.slice(0, 14).map((cat) => {
-          const { emoji, token } = getCategoryVisual(cat.handle, cat.name)
+          const { emoji, token, desc } = getCategoryVisual(
+            cat.handle,
+            cat.name
+          )
           return (
             <LocalizedClientLink
               key={cat.id}
               href={`/categories/${cat.handle}`}
-              className="flex flex-col items-center gap-2 p-3 bg-rm-paper border border-rm-line rounded-rm-lg hover:border-rm-ink hover:shadow-sm transition-all text-center"
+              className={`relative flex h-[132px] flex-col justify-between overflow-hidden rounded-rm-lg p-3.5 transition-transform hover:-translate-y-0.5 ${token}`}
             >
               <span
-                className={`grid place-items-center w-11 h-11 rounded-full text-2xl ${token}`}
+                className="pointer-events-none absolute -right-1 -bottom-2 text-6xl opacity-90"
                 aria-hidden
               >
                 {emoji}
               </span>
-              <span className="text-xs font-bold text-rm-ink leading-tight line-clamp-2">
+              {desc && (
+                <span className="text-[11px] font-bold text-rm-ink-3">
+                  {desc}
+                </span>
+              )}
+              <span className="font-display max-w-[70%] text-[15px] font-extrabold leading-tight tracking-tight text-rm-ink">
                 {cat.name}
               </span>
             </LocalizedClientLink>

@@ -68,6 +68,28 @@ const CONTENT: Record<string, ContentDoc> = {
       },
     ],
   },
+  "cookies-policy": {
+    title: "Política de cookies",
+    updatedAt: "julio de 2026",
+    intro:
+      "Usamos cookies propias y de terceros para que la tienda funcione correctamente, recordar tus preferencias y entender cómo usas el sitio.",
+    sections: [
+      {
+        heading: "Qué cookies usamos",
+        body: [
+          "Cookies esenciales para que el carrito, el inicio de sesión y la navegación funcionen.",
+          "Cookies de preferencias, como la región y el idioma seleccionados.",
+          "Cookies analíticas, que nos ayudan a entender qué páginas visitas y a mejorar la tienda.",
+        ],
+      },
+      {
+        heading: "Cómo administrarlas",
+        body: [
+          "Puedes bloquear o eliminar las cookies desde la configuración de tu navegador. Ten en cuenta que algunas funciones de la tienda pueden dejar de funcionar correctamente si las desactivas.",
+        ],
+      },
+    ],
+  },
 }
 
 type Props = {
