@@ -48,7 +48,7 @@ const CATEGORY_VISUAL_BY_HANDLE: Record<
   despensa: { emoji: "🍝", token: "bg-rm-s-butter", desc: "Pasta, granos, aceites" },
   "lacteos-huevos": { emoji: "🥛", token: "bg-rm-s-sky", desc: "Leche, quesos, yogurt" },
   carnes: { emoji: "🥩", token: "bg-rm-s-pink", desc: "Frescos del día" },
-  panaderia: { emoji: "🥖", token: "bg-rm-s-peach", desc: "Hornado en casa" },
+  panaderia: { emoji: "🥖", token: "bg-rm-s-peach", desc: "Horneado en casa" },
   bebidas: { emoji: "🥤", token: "bg-rm-s-sky", desc: "Refrescos, jugos, agua" },
   "snacks-dulces": { emoji: "🍫", token: "bg-rm-s-butter", desc: "Antojos para todos" },
   congelados: { emoji: "🧊", token: "bg-rm-s-sky", desc: "Listos en minutos" },
