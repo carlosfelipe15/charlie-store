@@ -29,6 +29,7 @@
     "@medusajs/draft-order": "2.15.2",
     "@medusajs/framework": "2.15.2",
     "@medusajs/icons": "2.15.2",
+    "@medusajs/index": "2.15.2",
     "@medusajs/js-sdk": "2.15.2",
     "@medusajs/medusa": "2.15.2",
     "@medusajs/ui": "4.1.12",
