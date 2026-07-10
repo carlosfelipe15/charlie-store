@@ -15,8 +15,7 @@ export default async function RodiFavoritesButton() {
       <RodiHeaderAction
         icon={<RodiIconHeart size={20} />}
         label="Favoritos"
-        sub={favorites.length ? `${favorites.length} guardados` : "Guardados"}
-        badge={favorites.length}
+        sub={favorites.length}
       />
     </LocalizedClientLink>
   )
