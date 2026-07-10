@@ -2,7 +2,7 @@
 
 Punto de entrada a `.context/`. Actualizar cada vez que cambie la fase activa o se shippee un feature.
 
-**Última actualización:** 2026-07-09 (Fases 9-10: favoritos + filtro de marca)
+**Última actualización:** 2026-07-10 (changelogs de reviews/favorites posteriores a su fase inicial)
 
 ## Fase actual
 
@@ -29,9 +29,9 @@ Cambios a una feature **posteriores** a su fase inicial se registran aquí en ve
 
 | Feature | Doc | Último cambio relevante |
 |---------|-----|--------------------------|
-| Brands | [`features/brands.md`](./features/brands.md) | CRUD completo (update/delete de marca, reasignación en producto existente, widget editable) — posterior a Fase 4. Filtrado de productos por marca agregado en Fase 10 (ver `docs/custom-features/brands.md#5.1`) |
-
-Reviews (Fase 7) y Favoritos (Fase 9) no tienen entradas posteriores todavía; cuando las haya, van en `features/reviews.md` / `features/favorites.md`.
+| Brands | [`features/brands.md`](./features/brands.md) | CRUD completo (update/delete de marca, reasignación en producto existente, widget editable) — posterior a Fase 4. Filtrado de productos por marca (Index Module, `filterable` en `product-brand.ts`) agregado en Fase 10 |
+| Reviews | [`features/reviews.md`](./features/reviews.md) | Validación de `product_id` existente (step compartido con `favorite`) + workflow/ruta de delete propio (`DELETE /store/reviews/:id`) — posterior a Fase 7 |
+| Favorites | [`features/favorites.md`](./features/favorites.md) | Misma validación de `product_id` existente aplicada a `create-favorite` (retrofit del step compartido con `review`) — posterior a Fase 9 |
 
 ## Estado del backlog
 

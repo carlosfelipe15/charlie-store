@@ -57,3 +57,11 @@ Completar el módulo `brand` (backend ya existía desde Fase 4, solo con creaci�
 ## Otros puntos importantes
 - Contrato de `additional_data.brand_id` en `POST /admin/products` y `POST /admin/products/:id`: **ausente/`undefined`** = no tocar la marca actual; **string** = asignar esa marca (valida que exista); **`null`** = desasignar. Cualquier consumidor futuro de estos endpoints debe respetar esta semántica.
 - La columna de acciones en `brands/page.tsx` usa `columnHelper.action({ actions: [[Edit], [Delete]] })` — el array de arrays agrupa visualmente con un separador, dejando "Delete" aislado como acción destructiva; es el patrón a seguir si se añaden más acciones a esta tabla.
+
+## Cambios posteriores — Fase 10: filtro de marca en PLP (Index Module)
+
+Fase: `.context/plans/2026-07-08/FASE-10-filtro-marca-index-module.md` (historial completo, incluye los 3 hallazgos que forzaron a abandonar el diseño original de "overridear `/store/products`"). Resumen del cambio que le pega directamente a `brand`:
+
+- `apps/backend/src/links/product-brand.ts` — el lado `brand` del link pasó de `BrandModule.linkable.brand` a `{ linkable: BrandModule.linkable.brand, filterable: ["id", "name"] }`. Sin este flag, el Index Engine (`@medusajs/index`, habilitado en esta misma fase vía `MEDUSA_FF_INDEX_ENGINE=true`) no puede resolver qué productos matchean un `brand_id` — `filterable` es lo que hace que un link sea consultable por `query.index()`.
+- No se tocó nada más de `brand` (módulo, workflows, rutas admin) — el resto del trabajo de esta fase vivió en un endpoint nuevo (`/store/products-list`) y en el storefront, documentado en `docs/custom-features/brands.md` (sección 5.1) y en el plan de Fase 10, no en este archivo.
+- **Importante para quien toque `brand` de nuevo**: activar el Index Engine a nivel de proyecto tiene un efecto secundario que no tiene nada que ver con `brand` en sí — rompe el filtrado por `category_id` en la ruta core `/store/products` (bug real de Medusa 2.15.2). Cualquier cambio futuro a `product-brand.ts` o a cómo se consulta `brand` debe tener en cuenta que el storefront ya no llama a `/store/products` para nada de listado — usa `/store/products-list` en su lugar. Ver el plan de Fase 10 para el detalle completo de los 3 hallazgos.
