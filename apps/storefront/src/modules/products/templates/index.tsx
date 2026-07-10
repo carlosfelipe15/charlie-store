@@ -1,5 +1,6 @@
-import React, { Suspense } from "react"
+import { Suspense } from "react"
 
+import { getFavoritedProductIds } from "@lib/data/favorites"
 import RodiBreadcrumbs from "@modules/products/components/rodi-breadcrumbs"
 import RodiImageGallery from "@modules/products/components/rodi-image-gallery"
 import ProductActions from "@modules/products/components/product-actions"
@@ -21,15 +22,18 @@ type ProductTemplateProps = {
   images: HttpTypes.StoreProductImage[]
 }
 
-const ProductTemplate: React.FC<ProductTemplateProps> = ({
+async function ProductTemplate({
   product,
   region,
   countryCode,
   images,
-}) => {
+}: ProductTemplateProps) {
   if (!product || !product.id) {
     return notFound()
   }
+
+  const favoritedProductIds = await getFavoritedProductIds()
+  const isFavorited = favoritedProductIds.has(product.id)
 
   const breadcrumbItems = [
     { label: "Inicio", href: "/" },
@@ -52,7 +56,11 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
 
         <main className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px] gap-8 lg:gap-10 pb-10">
           <div className="flex flex-col gap-8 min-w-0">
-            <RodiImageGallery images={images} />
+            <RodiImageGallery
+              images={images}
+              productId={product.id}
+              isFavorited={isFavorited}
+            />
             <div className="hidden lg:block">
               <ProductTabs product={product} />
             </div>

@@ -6,6 +6,7 @@ import {
   updateLineItem,
 } from "@lib/data/cart"
 import { getCartLineForVariant } from "@lib/data/cart-line"
+import { addFavorite, removeFavorite } from "@lib/data/favorites"
 import {
   canQuickAddFromCard,
   getQuickAddVariantId,
@@ -13,7 +14,8 @@ import {
 import { getProductBrandName } from "@lib/util/product-brand"
 import { HttpTypes } from "@medusajs/types"
 import { RodiBadge, RodiBtn, RodiBtnLink } from "@modules/common/components/rodi"
-import { RodiIconPlus } from "@modules/common/icons/rodi"
+import { useToast } from "@modules/common/components/ui"
+import { RodiIconHeart, RodiIconPlus } from "@modules/common/icons/rodi"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Thumbnail from "@modules/products/components/thumbnail"
 import RodiQtyAdder from "@modules/products/components/rodi-qty-adder"
@@ -26,6 +28,7 @@ export type RodiProductCardProps = {
   product: HttpTypes.StoreProduct
   cheapestPrice: VariantPrice | null
   isFeatured?: boolean
+  isFavorited?: boolean
   /** Compact rail: FAB + on image only */
   layout?: "grid" | "compact"
 }
@@ -58,13 +61,17 @@ export default function RodiProductCard({
   product,
   cheapestPrice,
   isFeatured,
+  isFavorited = false,
   layout = "grid",
 }: RodiProductCardProps) {
   const router = useRouter()
   const { countryCode } = useParams<{ countryCode: string }>()
+  const { showToast } = useToast()
   const [isAdding, setIsAdding] = useState(false)
   const [lineId, setLineId] = useState<string | null>(null)
   const [qty, setQty] = useState(0)
+  const [favorited, setFavorited] = useState(isFavorited)
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false)
 
   const quickAddVariantId = getQuickAddVariantId(product)
   const quickAdd = canQuickAddFromCard(product)
@@ -155,6 +162,25 @@ export default function RodiProductCard({
     }
   }
 
+  const handleToggleFavorite = async () => {
+    setIsTogglingFavorite(true)
+    const wasFavorited = favorited
+    setFavorited(!wasFavorited)
+
+    const result = wasFavorited
+      ? await removeFavorite(product.id)
+      : await addFavorite(product.id)
+
+    if (!result.success) {
+      setFavorited(wasFavorited)
+      showToast(result.error ?? "No se pudo actualizar tus favoritos.", "error")
+    } else {
+      router.refresh()
+    }
+
+    setIsTogglingFavorite(false)
+  }
+
   const stopNav = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -183,6 +209,28 @@ export default function RodiProductCard({
           </RodiBadge>
         </div>
       )}
+
+      <button
+        type="button"
+        onClick={(e) => {
+          stopNav(e)
+          void handleToggleFavorite()
+        }}
+        disabled={isTogglingFavorite}
+        className={clsx(
+          "absolute z-10 grid place-items-center rounded-full bg-rm-paper/90 backdrop-blur-sm shadow-sm disabled:opacity-60",
+          isCompact ? "top-3 right-3 w-7 h-7" : "top-3.5 right-3.5 w-8 h-8"
+        )}
+        aria-label={favorited ? "Quitar de favoritos" : "Agregar a favoritos"}
+        aria-pressed={favorited}
+        data-testid="product-card-favorite-toggle"
+      >
+        <RodiIconHeart
+          size={isCompact ? 14 : 16}
+          filled={favorited}
+          className={favorited ? "text-rm-red" : "text-rm-ink-3"}
+        />
+      </button>
 
       <LocalizedClientLink
         href={`/products/${product.handle}`}

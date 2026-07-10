@@ -5,6 +5,7 @@ import { RodiLogo } from "@modules/common/components/rodi"
 import {
   RodiIconBolt,
   RodiIconChevron,
+  RodiIconHeart,
   RodiIconMenu,
   RodiIconPin,
   RodiIconUser,
@@ -14,6 +15,8 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import RodiHeaderSearch from "@modules/layout/components/rodi-header-search"
 import RodiMegaMenu from "@modules/layout/components/rodi-mega-menu"
 import SideMenu from "@modules/layout/components/side-menu"
+import CountrySelect from "@modules/layout/components/country-select"
+import useToggleState from "@lib/hooks/use-toggle-state"
 import { clsx } from "clsx"
 import { ReactNode, useCallback, useState } from "react"
 
@@ -29,6 +32,7 @@ type RodiHeaderClientProps = {
   currentLocale: string | null
   cartSlot: ReactNode
   accountSlot: ReactNode
+  favoritesSlot: ReactNode
 }
 
 export default function RodiHeaderClient({
@@ -38,8 +42,10 @@ export default function RodiHeaderClient({
   currentLocale,
   cartSlot,
   accountSlot,
+  favoritesSlot,
 }: RodiHeaderClientProps) {
   const [megaOpen, setMegaOpen] = useState(false)
+  const regionToggleState = useToggleState()
 
   const parents = categories.filter((c) => !c.parent_category)
   const navCategories = parents.slice(0, 6)
@@ -64,20 +70,22 @@ export default function RodiHeaderClient({
             <RodiLogo size={22} className="hidden small:flex" />
           </LocalizedClientLink>
 
-          <div className="hidden md:flex items-center gap-2 pl-3 ml-1 border-l border-rm-line text-rm-ink-2 shrink-0">
-            <span className="text-rm-red">
-              <RodiIconPin size={16} />
-            </span>
-            <div className="leading-tight">
-              <div className="text-[10px] text-rm-ink-3 uppercase tracking-widest font-bold">
-                Entregar en
-              </div>
-              <div className="text-[13px] font-bold text-rm-ink">
-                Tu dirección
-              </div>
+          {regions && (
+            <div
+              className="hidden md:flex items-center gap-2 pl-3 ml-1 border-l border-rm-line text-rm-ink-2 shrink-0"
+              onMouseEnter={regionToggleState.open}
+              onMouseLeave={regionToggleState.close}
+            >
+              <span className="text-rm-red">
+                <RodiIconPin size={16} />
+              </span>
+              <CountrySelect toggleState={regionToggleState} regions={regions} />
+              <RodiIconChevron
+                size={14}
+                chevronDirection={regionToggleState.state ? "up" : "down"}
+              />
             </div>
-            <RodiIconChevron size={14} />
-          </div>
+          )}
 
           <div className="hidden small:flex flex-1 min-w-0">
             <RodiHeaderSearch />
@@ -92,6 +100,15 @@ export default function RodiHeaderClient({
             >
               <RodiIconUser size={22} />
               <span className="sr-only">Cuenta</span>
+            </LocalizedClientLink>
+            {favoritesSlot}
+            <LocalizedClientLink
+              href="/account/favorites"
+              className="small:hidden p-2 text-rm-ink"
+              data-testid="nav-favorites-link-mobile"
+            >
+              <RodiIconHeart size={22} />
+              <span className="sr-only">Favoritos</span>
             </LocalizedClientLink>
             {cartSlot}
           </div>

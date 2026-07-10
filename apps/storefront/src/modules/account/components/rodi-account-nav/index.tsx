@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: "/account", label: "Resumen", emoji: "📊" },
   { href: "/account/orders", label: "Mis pedidos", emoji: "📦" },
   { href: "/account/addresses", label: "Direcciones", emoji: "📍" },
+  { href: "/account/favorites", label: "Favoritos", emoji: "❤️" },
   { href: "/account/profile", label: "Perfil", emoji: "👤" },
 ] as const
 

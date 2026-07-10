@@ -9,6 +9,7 @@ import { Suspense } from "react"
 import RodiTopBar from "@modules/layout/components/rodi-top-bar"
 import CartDropdown from "@modules/layout/components/cart-dropdown"
 import RodiAccountButton from "@modules/layout/components/rodi-account-button"
+import RodiFavoritesButton from "@modules/layout/components/rodi-favorites-button"
 
 import RodiHeaderClient from "./rodi-header-client"
 
@@ -31,11 +32,16 @@ export default async function RodiHeader() {
         locales={locales}
         currentLocale={currentLocale}
         accountSlot={
-          <Suspense fallback={null}>
+          <Suspense key="account-slot" fallback={null}>
             <RodiAccountButton />
           </Suspense>
         }
-        cartSlot={<CartDropdown cart={cart} variant="rodi" />}
+        favoritesSlot={
+          <Suspense key="favorites-slot" fallback={null}>
+            <RodiFavoritesButton />
+          </Suspense>
+        }
+        cartSlot={<CartDropdown key="cart-slot" cart={cart} variant="rodi" />}
       />
     </div>
   )
