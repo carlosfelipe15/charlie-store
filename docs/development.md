@@ -84,6 +84,15 @@ pnpm backend:seed
 
 (depende de la configuración del script `seed` en el paquete backend).
 
+### Datos de prueba: Price List de oferta (para ver el flash sale del home)
+
+`rodi-flash-sale` y `rodi-curated-row` (home del storefront) se ocultan por completo cuando no hay productos con un precio de oferta activo — es el comportamiento esperado, no un bug (ver `.context/backlog.md`, sección "Resueltos Recientemente"). El seed inicial no crea ninguna Price List de tipo oferta, así que localmente esa sección aparece vacía salvo que la crees a mano:
+
+1. Entra al Admin (`http://localhost:9000/app`) → **Settings → Price Lists → New**.
+2. Tipo: **Sale**. Define un rango de vigencia que incluya la fecha actual.
+3. Agrega uno o más productos/variantes con un precio menor al precio por defecto.
+4. Guarda y recarga `http://localhost:8000/es` — la franja de flash sale debería aparecer con el countdown.
+
 ## Storefront (`apps/storefront`)
 
 Crea `apps/storefront/.env.local` con al menos:

@@ -6,9 +6,10 @@ import { FormEvent, useState } from "react"
 
 /**
  * Newsletter signup (design-reference/ecommerce-test/home.jsx:190-206). No
- * backend endpoint exists for subscriptions yet — this stubs a success
- * confirmation via toast rather than silently doing nothing, matching how
- * Fase 1 fixed other "200 OK but no feedback" gaps.
+ * backend endpoint exists for subscriptions yet (ver
+ * .context/backlog.md#FEATURE/NEWSLETTER) — el formulario no persiste el
+ * email todavía, así que el toast no debe implicar que la suscripción quedó
+ * registrada.
  */
 export default function RodiNewsletter() {
   const [email, setEmail] = useState("")
@@ -20,7 +21,7 @@ export default function RodiNewsletter() {
     if (!email.trim()) return
 
     setPending(true)
-    showToast("¡Listo! Te avisaremos de nuestros próximos descuentos.", "success")
+    showToast("Gracias por tu interés — la suscripción por email estará disponible pronto.", "info")
     setEmail("")
     setPending(false)
   }
