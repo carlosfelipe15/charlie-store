@@ -95,6 +95,14 @@ Archivos:
 
 Listado público de solo lectura (misma forma que el GET admin, vía `query.graph` + `req.queryConfig`); pensado para filtro de marca en el PLP o la franja de marcas del home. Ya consumido por el storefront: `lib/data/brands.ts` y `modules/home/components/rodi-brands-strip/`.
 
+### 5.1. Filtrado de productos por marca (Index Module)
+
+Desde Fase 10, `product-brand.ts` marca el lado `brand` del link como `filterable: ["id", "name"]`, y el endpoint `GET /store/products-list` (**no** `/store/products` — ver más abajo por qué) acepta `brand_id` para filtrar el listado de productos por marca. Requiere el módulo `@medusajs/index` (Index Engine) registrado en `medusa-config.ts` y `MEDUSA_FF_INDEX_ENGINE=true` — `query.graph()` no puede filtrar por un campo de un módulo enlazado (brand vive en su propio módulo), solo `query.index()` puede.
+
+**Por qué es un endpoint nuevo y no un override de `/store/products`**: se intentó overridear la ruta core primero y no funcionó — el middleware de validación estricto de core sigue corriendo en paralelo al del proyecto aunque el `route.ts` se reemplace (Medusa reemplaza el *handler* por matcher, pero concatena middlewares en vez de reemplazarlos). Detalle completo, con los tres hallazgos que llevaron al diseño final, en [`.context/plans/2026-07-08/FASE-10-filtro-marca-index-module.md`](../../.context/plans/2026-07-08/FASE-10-filtro-marca-index-module.md).
+
+Consumido por el storefront en `lib/data/products.ts` (`listProducts()`, que ahora apunta a `/store/products-list` para todo el listado, no solo cuando hay `brand_id`) y `modules/store/components/rodi-plp-filters/`.
+
 ### 6. Asociar marca a un producto
 
 **Al crear** — middleware en `POST /admin/products`:
@@ -191,7 +199,7 @@ sequenceDiagram
 |-----------|--------------|
 | Campos extra (logo, slug) | Modelo + migración + validators + UI |
 | Unicidad de `name` | Validator + constraint en migración |
-| Filtro por marca en storefront (PLP) | Ya existe `GET /store/brands`; falta UI de filtro en `store/` |
+| Conteo de productos por marca en el filtro del PLP | Agregación adicional en `products-list` — no implementado en Fase 10 |
 | Seed de marcas | Script en `migration-scripts/` o workflow en seed |
 
 ## Archivos (mapa rápido)
