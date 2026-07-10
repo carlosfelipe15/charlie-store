@@ -7,12 +7,15 @@ import {
 import { createFindParams } from "@medusajs/medusa/api/utils/validators"
 import { PostAdminCreateBrand, PostAdminUpdateBrand } from "./admin/brands/validators";
 import { PostStoreCreateReview, GetStoreReviewsParams } from "./store/reviews/validators";
+import { PostStoreCreateFavorite, GetStoreFavoritesParams } from "./store/favorites/validators";
+import { storeProductsWithBrandMiddlewares } from "./store/products-list/middlewares";
 import { z } from "zod";
 
 export const GetBrandsSchema = createFindParams()
 
 export default defineMiddlewares({
     routes: [
+        ...storeProductsWithBrandMiddlewares,
         {
             matcher: "/admin/brands",
             method: "POST",
@@ -59,6 +62,39 @@ export default defineMiddlewares({
             middlewares: [
                 authenticate("customer", ["session", "bearer"]),
                 validateAndTransformBody(PostStoreCreateReview),
+            ],
+        },
+        {
+            matcher: "/store/reviews/:id",
+            method: "DELETE",
+            middlewares: [
+                authenticate("customer", ["session", "bearer"]),
+            ],
+        },
+        {
+            matcher: "/store/favorites",
+            method: "GET",
+            middlewares: [
+                authenticate("customer", ["session", "bearer"]),
+                validateAndTransformQuery(GetStoreFavoritesParams, {
+                    defaults: ["id", "product_id", "customer_id", "created_at"],
+                    isList: true,
+                }),
+            ],
+        },
+        {
+            matcher: "/store/favorites",
+            method: "POST",
+            middlewares: [
+                authenticate("customer", ["session", "bearer"]),
+                validateAndTransformBody(PostStoreCreateFavorite),
+            ],
+        },
+        {
+            matcher: "/store/favorites/:product_id",
+            method: "DELETE",
+            middlewares: [
+                authenticate("customer", ["session", "bearer"]),
             ],
         },
         {
