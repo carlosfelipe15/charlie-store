@@ -27,6 +27,22 @@ Gestor de paquetes: **pnpm 10** (workspace). Orquestación: **Turbo**.
 
 Si `docs/` contradice el código, confía en el código y corrige el doc — no improvises sobre un doc desactualizado.
 
+## Diseño de referencia (`apps/storefront/design-reference/`)
+
+`apps/storefront/design-reference/ecommerce-test/` contiene el diseño de referencia del storefront ("Rodi Mercado"), como mockups en JSX (no Figma, no imágenes) — es la fuente de verdad visual/UX al implementar o auditar UI de storefront:
+
+| Archivo | Contenido |
+|---------|-----------|
+| `data.jsx` | Datos mock de referencia (ej. categorías) |
+| `home.jsx` | Secciones de la home (incluye "compra por categoría" y filas curadas) |
+| `pages.jsx` | Páginas de listado/categoría y producto |
+| `pdp.jsx` | Página de detalle de producto |
+| `shared.jsx`, `tokens.jsx` | Componentes y design tokens compartidos |
+| `mobile.jsx`, `browser-window.jsx`, `ios-frame.jsx`, `design-canvas.jsx` | Marcos/canvas para previsualizar el diseño en distintos dispositivos |
+| `index.html`, `Rodi Mercado - Diseño.html` | Entrypoints para visualizar el mockup en el navegador |
+
+Al auditar o implementar cualquier área del storefront, compara siempre contra estos archivos antes de asumir el diseño esperado. Ver también `.context/reports/design-review-2026-07-05.md` para gaps ya detectados entre este diseño y la implementación.
+
 ## Memoria de trabajo (`.context/`)
 
 No es documentación de referencia, es el registro de trabajo del agente entre sesiones:
@@ -69,9 +85,15 @@ Módulo (modelo + servicio CRUD)
 - **Aislamiento**: enlazar entidades con **module links**, no importar servicios de otro módulo.
 - **Lógica de negocio**: en pasos de workflow, no en rutas.
 
+### Índice de búsqueda cross-módulo (`@medusajs/index`)
+
+Desde Fase 10, el backend tiene el módulo `@medusajs/index` (Index Engine) registrado y `MEDUSA_FF_INDEX_ENGINE=true` en `.env` — necesario para que `query.index()` funcione (filtrar por un campo de un módulo *enlazado*, algo que `query.graph()` no soporta). Un link solo es filtrable por Index Engine si su lado enlazado declara `filterable: [...]` en `defineLink` (ver `links/product-brand.ts`).
+
+**Advertencia importante si vas a usar `query.index()` en una ruta nueva**: en Medusa 2.15.2, activar este flag rompe el filtrado por `category_id`/`tag_id` en la ruta core `/store/products` (bug real de Medusa, no de este repo — el dispatch interno de core chequea los nombres de campo equivocados). Por eso `apps/backend/src/api/store/products-list/route.ts` es una ruta **nueva** (no un override de `/store/products`) que solo usa `query.index()` para resolver ids en un paso previo liviano, y siempre hace el fetch final vía `query.graph()` (conteos exactos, sin tocar el bug de core). Detalle completo, incluyendo por qué overridear una ruta core no funciona (los middlewares de core no se reemplazan, solo se concatenan), en [`.context/plans/2026-07-08/FASE-10-filtro-marca-index-module.md`](.context/plans/2026-07-08/FASE-10-filtro-marca-index-module.md).
+
 ## Funcionalidad custom actual
 
-Dos dominios de negocio extendidos, ambos siguiendo el patrón Module → Link → Workflow → API:
+Tres dominios de negocio extendidos, todos siguiendo el patrón Module → Link → Workflow → API:
 
 **Brands** (marcas) — CRUD completo:
 - Módulo: `apps/backend/src/modules/brand/`
@@ -85,14 +107,24 @@ Dos dominios de negocio extendidos, ambos siguiendo el patrón Module → Link �
 
 Detalle completo: [docs/custom-features/brands.md](docs/custom-features/brands.md).
 
-**Reviews** (reseñas) — solo lectura/creación, sin admin UI todavía:
+**Reviews** (reseñas) — lectura/creación/borrado propio, sin admin UI todavía:
 - Módulo: `apps/backend/src/modules/review/`
-- Workflow: `create-review.ts` (crea reseña + link en un paso)
-- API store: `GET/POST /store/reviews`, `GET /store/reviews/summary` (promedio/conteo/distribución, por producto o sitewide)
+- Workflows: `create-review.ts` (valida que el producto exista, crea reseña + link en un paso), `delete-review.ts` (solo el autor puede borrar su reseña, ver-only ownership check en `find-review.ts`; **no** idempotente, a diferencia de favorites)
+- API store: `GET/POST /store/reviews`, `DELETE /store/reviews/:id`, `GET /store/reviews/summary` (promedio/conteo/distribución, por producto o sitewide)
 - Link producto↔reseña: `apps/backend/src/links/product-review.ts` (**cardinalidad invertida** respecto a brand: un producto → muchas reseñas, `isList: true` va en el lado `review`)
 - Storefront: sección de reseñas en PDP, badge de rating, stat sitewide en login (`lib/data/reviews.ts`)
 
 Detalle completo: [docs/custom-features/reviews.md](docs/custom-features/reviews.md).
+
+**Favorites** (favoritos/wishlist) — toggle store-only, sin admin UI:
+- Módulo: `apps/backend/src/modules/favorite/`, con **constraint único** `(product_id, customer_id)` en el modelo (a diferencia de `review`, que no tiene uno)
+- Workflows: `create-favorite.ts`/`delete-favorite.ts`, ambos **idempotentes** (crear sobre uno existente devuelve el mismo registro; borrar uno inexistente no falla) usando un `find-favorite.ts` step compartido + `when(...).then(...)`; `create-favorite.ts` valida primero que el `product_id` exista con `validate-product-exists.ts` (step compartido con `review`, 404 si no existe)
+- API store: `GET/POST /store/favorites`, `DELETE /store/favorites/:product_id` — **las tres rutas requieren cliente autenticado** (a diferencia de reviews, donde el GET es público)
+- Link producto↔favorito: `apps/backend/src/links/product-favorite.ts` (misma cardinalidad que `review`: un producto → muchos favoritos, `isList: true` en el lado `favorite`)
+- `customer_id` es una columna de texto plana (mismo patrón que `review.customer_id`), no un link formal a `CustomerModule` — decisión deliberada, ver `docs/custom-features/favorites.md`
+- Storefront: toggle en product card y galería de PDP, ícono con badge en el header, página `/account/favorites` (`lib/data/favorites.ts`)
+
+Detalle completo: [docs/custom-features/favorites.md](docs/custom-features/favorites.md).
 
 **Nota**: al registrar un módulo nuevo en `medusa-config.ts` o crear/editar un archivo en `src/links/`, reiniciar `medusa develop` completo — no recarga en caliente.
 
