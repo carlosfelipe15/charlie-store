@@ -4,6 +4,8 @@ import { Suspense } from "react"
 import { HttpTypes } from "@medusajs/types"
 import { getCategoryVisual } from "@lib/util/category-emoji"
 import { listBrands } from "@lib/data/brands"
+import { listCategories } from "@lib/data/categories"
+import { listProducts } from "@lib/data/products"
 import SkeletonProductGrid from "@modules/skeletons/templates/skeleton-product-grid"
 import RodiCategoryChips from "@modules/store/components/rodi-category-chips"
 import RodiPlpFilters from "@modules/store/components/rodi-plp-filters"
@@ -29,24 +31,63 @@ export default async function CategoryTemplate({
 
   if (!category || !countryCode) notFound()
 
-  const brands = await listBrands()
+  const countQueryParams: Record<string, unknown> = {
+    category_id: [category.id],
+    limit: 1,
+  }
 
-  const subcategories =
-    category.category_children?.map((c) => ({
-      name: c.name ?? "",
-      handle: c.handle ?? "",
-    })) ?? []
+  if (brandId?.length) {
+    countQueryParams.brand_id = brandId
+  }
+
+  // A subcategory has no children of its own, so basing the chip row on
+  // `category.category_children` makes every sibling disappear as soon as
+  // you land on one — fetch the parent's children (siblings) separately
+  // instead. (Asking for `*parent_category.category_children` in the same
+  // request doesn't work: query.graph won't re-expand the inverse relation
+  // we just traversed, so it silently comes back empty.)
+  const parentCategory = category.parent_category
+
+  const [brands, productCountResult, siblingCategories] = await Promise.all([
+    listBrands(),
+    listProducts({ queryParams: countQueryParams, countryCode }),
+    parentCategory
+      ? listCategories({
+          parent_category_id: parentCategory.id,
+          fields: "id,name,handle",
+        })
+      : Promise.resolve(null),
+  ])
+
+  const productCount = productCountResult.response.count
+
+  // "Todo" should point at the parent (not at the subcategory itself) when
+  // one is active.
+  const chipsRootCategory = parentCategory ?? category
+
+  const subcategories = siblingCategories
+    ? siblingCategories.map((c) => ({ name: c.name ?? "", handle: c.handle ?? "" }))
+    : category.category_children?.map((c) => ({
+        name: c.name ?? "",
+        handle: c.handle ?? "",
+      })) ?? []
+
+  // Same reasoning for the hero emoji: the curated visual map only has
+  // entries for the top-level categories, so a subcategory would otherwise
+  // fall back to the generic default instead of its parent's emoji.
+  const visualSource = parentCategory ?? category
 
   return (
     <div className="py-6 content-container" data-testid="category-container">
       <RodiPlpHero
         title={category.name ?? "Categoría"}
         subtitle={category.description ?? undefined}
-        emoji={getCategoryVisual(category.handle, category.name).emoji}
+        productCount={productCount}
+        emoji={getCategoryVisual(visualSource.handle, visualSource.name).emoji}
       />
-      {(subcategories.length > 0 || category.parent_category) && (
+      {subcategories.length > 0 && (
         <RodiCategoryChips
-          category={category}
+          category={chipsRootCategory}
           subcategories={subcategories}
         />
       )}

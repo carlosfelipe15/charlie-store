@@ -38,7 +38,12 @@ export const getCategoryByHandle = async (categoryHandle: string[]) => {
       `/store/product-categories`,
       {
         query: {
-          fields: "*category_children, *products",
+          // Note: *parent_category.category_children (re-expanding the
+          // inverse relation we just traversed) silently comes back empty —
+          // Medusa's query.graph doesn't support that cycle. When the chip
+          // row needs a subcategory's siblings, fetch them separately via
+          // listCategories({ parent_category_id }) instead.
+          fields: "*category_children, *products, *parent_category",
           handle,
         },
         next,
