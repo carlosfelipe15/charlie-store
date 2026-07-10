@@ -1,4 +1,5 @@
 import { listProductsWithSort } from "@lib/data/products"
+import { getFavoritedProductIds } from "@lib/data/favorites"
 import { getRegion } from "@lib/data/regions"
 import ProductPreview from "@modules/products/components/product-preview"
 import { RodiPagination } from "@modules/store/components/rodi-pagination"
@@ -13,6 +14,7 @@ type PaginatedProductsParams = {
   collection_id?: string[]
   category_id?: string[]
   id?: string[]
+  brand_id?: string[]
   order?: string
 }
 
@@ -21,6 +23,7 @@ export default async function PaginatedProducts({
   page,
   collectionId,
   categoryId,
+  brandId,
   productsIds,
   query,
   countryCode,
@@ -29,6 +32,7 @@ export default async function PaginatedProducts({
   page: number
   collectionId?: string
   categoryId?: string
+  brandId?: string[]
   productsIds?: string[]
   query?: string
   countryCode: string
@@ -49,6 +53,10 @@ export default async function PaginatedProducts({
     queryParams["category_id"] = [categoryId]
   }
 
+  if (brandId?.length) {
+    queryParams["brand_id"] = brandId
+  }
+
   if (productsIds) {
     queryParams["id"] = productsIds
   }
@@ -63,14 +71,20 @@ export default async function PaginatedProducts({
     return null
   }
 
-  const {
-    response: { products, count },
-  } = await listProductsWithSort({
-    page,
-    queryParams,
-    sortBy,
-    countryCode,
-  })
+  const [
+    {
+      response: { products, count },
+    },
+    favoritedProductIds,
+  ] = await Promise.all([
+    listProductsWithSort({
+      page,
+      queryParams,
+      sortBy,
+      countryCode,
+    }),
+    getFavoritedProductIds(),
+  ])
 
   const totalPages = Math.ceil(count / PRODUCT_LIMIT)
 
@@ -87,7 +101,11 @@ export default async function PaginatedProducts({
       >
         {products.map((p) => (
           <li key={p.id}>
-            <ProductPreview product={p} region={region} />
+            <ProductPreview
+              product={p}
+              region={region}
+              isFavorited={favoritedProductIds.has(p.id)}
+            />
           </li>
         ))}
       </ul>

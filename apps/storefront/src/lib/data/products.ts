@@ -55,7 +55,11 @@ export const listProducts = async ({
 
   return sdk.client
     .fetch<{ products: HttpTypes.StoreProduct[]; count: number }>(
-      `/store/products`,
+      // Custom endpoint, not core's /store/products — adds brand_id
+      // filtering and fixes a core bug where enabling the Index Engine
+      // feature flag (MEDUSA_FF_INDEX_ENGINE) breaks category_id filtering
+      // site-wide. See apps/backend/src/api/store/products-list/route.ts.
+      `/store/products-list`,
       {
         method: "GET",
         query: {
