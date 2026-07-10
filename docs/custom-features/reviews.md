@@ -47,14 +47,20 @@ modules: [
 
 **Cuidado con la cardinalidad**: en `brand` el `isList: true` va del lado producto (muchos productos comparten una marca); en `review` va al revés, del lado `review` (un producto tiene muchas reseñas). Copiar el link de `brand` sin invertir el `isList` produce en runtime `Entity 'Product' does not have property 'reviews'`.
 
-### 3. Workflow create-review
+### 3. Workflows
 
 ```
-workflows/create-review.ts        → crea la reseña y el link en el mismo workflow (createRemoteLinkStep de @medusajs/medusa/core-flows)
-workflows/steps/create-review.ts  → createReviews + deleteReviews en compensación
+workflows/create-review.ts             → valida que el producto exista, crea la reseña y el link en el mismo workflow (createRemoteLinkStep de @medusajs/medusa/core-flows)
+workflows/steps/create-review.ts       → createReviews + deleteReviews en compensación
+workflows/steps/validate-product-exists.ts → step compartido con favorites; retrieveProduct(product_id) — lanza NOT_FOUND automático si no existe (ver docs/custom-features/favorites.md)
+workflows/delete-review.ts             → findReviewStep (retrieve + chequeo de ownership) → dismiss del link → deleteReviewStep
+workflows/steps/find-review.ts         → solo lectura; retrieveReview lanza NOT_FOUND si no existe; lanza NOT_ALLOWED si customer_id no coincide
+workflows/steps/delete-review.ts       → deleteReviews + createReviews en compensación
 ```
 
-Entrada: `{ product_id, customer_id, rating, title?, body }`. No hay workflows de update/delete todavía (ver Pendientes).
+Entrada de `create-review`: `{ product_id, customer_id, rating, title?, body }`. Un `product_id` que no corresponde a ningún producto real ahora se rechaza con 404 (`Product with id: X was not found`) antes de crear la reseña o el link — antes de esto no había ninguna validación y se podía crear una reseña + link huérfano apuntando a un producto inexistente.
+
+No hay workflow de **update** todavía (ver Pendientes) — sí de **delete**, ver sección 4.
 
 ### 4. API Store
 
@@ -77,7 +83,14 @@ Entrada: `{ product_id, customer_id, rating, title?, body }`. No hay workflows d
 - Calculado en memoria sobre hasta 10.000 filas (`pagination: { take: 10000 }`), no es una agregación SQL
 - Respuesta: `{ product_id, average, count, distribution: {1..5: n} }`
 
-Archivos: `api/store/reviews/route.ts`, `api/store/reviews/summary/route.ts`, `api/store/reviews/validators.ts`, reglas en `api/middlewares.ts`.
+**`DELETE /store/reviews/:id`**
+
+- Requiere cliente autenticado — middleware `authenticate("customer", ["session", "bearer"])`
+- Path param es el `id` interno de la reseña (a diferencia de favorites, que usa `product_id` — una reseña no tiene constraint único por producto+cliente, así que `product_id` solo no identifica una fila)
+- Ejecuta `deleteReviewWorkflow`; **no** es idempotente: 404 si la reseña no existe, 400 (`NOT_ALLOWED`) si existe pero pertenece a otro cliente — a diferencia de `deleteFavoriteWorkflow`, que no falla en ninguno de los dos casos
+- El ownership check compara `review.customer_id` (de la fila) contra `req.auth_context.actor_id` (del token), nunca contra el body
+
+Archivos: `api/store/reviews/route.ts`, `api/store/reviews/[id]/route.ts`, `api/store/reviews/summary/route.ts`, `api/store/reviews/validators.ts`, reglas en `api/middlewares.ts`.
 
 No existe API admin (`/admin/reviews`) — sin ruta ni widget de moderación hoy.
 
@@ -96,7 +109,7 @@ No existe API admin (`/admin/reviews`) — sin ruta ni widget de moderación hoy
 | Necesidad | Dónde actuar |
 |-----------|--------------|
 | Admin UI de moderación | Calcar `admin/routes/brands/` + `api/admin/reviews/` (patrón directamente reutilizable) |
-| Editar/borrar reseña propia | Workflow update/delete + rutas `POST`/`DELETE /store/reviews/:id` con check de `customer_id` |
+| Editar reseña propia | Workflow update + ruta `POST /store/reviews/:id` con check de `customer_id` (delete ya existe, ver sección 4) |
 | Evitar reseñas duplicadas por cliente/producto | Constraint o validación en `createReviewStep` antes de `createReviews` |
 | Agregación por SQL en vez de en memoria | Reemplazar el loop de `summary/route.ts` si el volumen de reseñas crece mucho más allá de 10.000 por producto |
 
@@ -113,12 +126,18 @@ apps/backend/src/
 ├── links/product-review.ts
 ├── workflows/
 │   ├── create-review.ts
-│   └── steps/create-review.ts
+│   ├── delete-review.ts
+│   └── steps/
+│       ├── create-review.ts
+│       ├── find-review.ts
+│       ├── delete-review.ts
+│       └── validate-product-exists.ts   # compartido con favorites
 ├── api/store/reviews/
 │   ├── route.ts             # GET, POST
+│   ├── [id]/route.ts        # DELETE
 │   ├── validators.ts
 │   └── summary/route.ts     # GET agregado (por producto o sitewide)
-└── api/middlewares.ts        # /store/reviews GET + POST (auth customer)
+└── api/middlewares.ts        # /store/reviews GET + POST + DELETE/:id (auth customer)
 
 apps/storefront/src/
 ├── lib/data/reviews.ts

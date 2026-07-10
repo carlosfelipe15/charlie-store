@@ -2,6 +2,7 @@ import { createWorkflow, WorkflowResponse } from "@medusajs/framework/workflows-
 import { createRemoteLinkStep } from "@medusajs/medusa/core-flows";
 import { Modules } from "@medusajs/framework/utils";
 import { createReviewStep } from "./steps/create-review";
+import { validateProductExistsStep } from "./steps/validate-product-exists";
 import { REVIEW_MODULE } from "../modules/review";
 
 type CreateReviewWorkflowInput = {
@@ -15,6 +16,8 @@ type CreateReviewWorkflowInput = {
 export const createReviewWorkflow = createWorkflow(
     "create-review",
     function (input: CreateReviewWorkflowInput) {
+        validateProductExistsStep(input);
+
         const review = createReviewStep(input);
 
         createRemoteLinkStep([
