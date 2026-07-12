@@ -1,6 +1,10 @@
 import { MedusaContainer } from "@medusajs/framework";
 import { ContainerRegistrationKeys, ProductStatus } from "@medusajs/framework/utils";
-import { createProductsWorkflow, createInventoryLevelsWorkflow } from "@medusajs/medusa/core-flows";
+import {
+  createProductsWorkflow,
+  updateProductsWorkflow,
+  createInventoryLevelsWorkflow,
+} from "@medusajs/medusa/core-flows";
 import { createBrandWorkflow } from "../workflows/create-brand";
 import { createReviewWorkflow } from "../workflows/create-review";
 
@@ -8,11 +12,17 @@ import { createReviewWorkflow } from "../workflows/create-review";
 // (currently empty — the initial seed only creates the demo apparel
 // catalog). Products, images, brands and reviews are sourced from
 // dummyjson.com/products (groceries, beauty, fragrances, kitchen-accessories
-// and skin-care categories). Safe to re-run: skips any handle that already
-// exists instead of duplicating (same convention as add-supermarket-categories.ts).
+// and skin-care categories). Safe to re-run: never duplicates a product —
+// handles that don't exist yet get created, handles that already exist get
+// reconciled instead (missing subcategory/brand added via updateProductsWorkflow,
+// see step 1.5 below) so editing this file's category/brand data and re-running
+// updates products created by an earlier version of the script.
 //
 // Category coverage: Panadería, Snacks y dulces and Bebé have no products —
-// dummyjson.com has no bakery/snacks/baby categories to source from.
+// dummyjson.com has no bakery/snacks/baby categories to source from. Products
+// only get a subcategoryHandle when there's a genuine taxonomy match — see
+// the SeedProduct type comment for which categories have no subcategories at
+// all (Congelados/Mascotas/Farmacia) or no matching one (Aseo personal).
 
 type SeedReview = {
   rating: number;
@@ -26,6 +36,13 @@ type SeedProduct = {
   handle: string;
   description: string;
   categoryHandle: string;
+  // Leaf subcategory under categoryHandle (see .context/plans/2026-07-07/FASE-5
+  // and the "DATA/SUBCATEGORIAS" backlog entry for the taxonomy). Omitted when
+  // no subcategory is a genuine match — e.g. Congelados/Mascotas/Farmacia have
+  // no subcategories defined at all, and Aseo personal's subcats (haircare,
+  // oral care, shaving...) don't cover makeup/fragrance. Products still keep
+  // categoryHandle so they remain visible on the parent category page.
+  subcategoryHandle?: string;
   sku: string;
   weight: number;
   priceUsd: number;
@@ -60,6 +77,7 @@ const GROCERIES: SeedProduct[] = [
     handle: "beef-steak",
     description: "High-quality beef steak, great for grilling or cooking to your preferred level of doneness.",
     categoryHandle: "carnes",
+    subcategoryHandle: "carnes-res",
     sku: "GRO-BRD-BEE-017",
     weight: 10,
     priceUsd: 12.99,
@@ -94,6 +112,7 @@ const GROCERIES: SeedProduct[] = [
     handle: "chicken-meat",
     description: "Fresh and tender chicken meat, suitable for various culinary preparations.",
     categoryHandle: "carnes",
+    subcategoryHandle: "carnes-pollo",
     sku: "GRO-BRD-CHI-019",
     weight: 1,
     priceUsd: 9.99,
@@ -114,6 +133,7 @@ const GROCERIES: SeedProduct[] = [
     handle: "cooking-oil",
     description: "Versatile cooking oil suitable for frying, sautéing, and various culinary applications.",
     categoryHandle: "despensa",
+    subcategoryHandle: "despensa-aceites-vinagres",
     sku: "GRO-BRD-COO-020",
     weight: 5,
     priceUsd: 4.99,
@@ -131,6 +151,7 @@ const GROCERIES: SeedProduct[] = [
     handle: "cucumber",
     description: "Crisp and hydrating cucumbers, ideal for salads, snacks, or as a refreshing side.",
     categoryHandle: "frescos",
+    subcategoryHandle: "frescos-verduras-hortalizas",
     sku: "GRO-BRD-CUC-021",
     weight: 4,
     priceUsd: 1.49,
@@ -165,6 +186,7 @@ const GROCERIES: SeedProduct[] = [
     handle: "eggs",
     description: "Fresh eggs, a versatile ingredient for baking, cooking, or breakfast.",
     categoryHandle: "lacteos-huevos",
+    subcategoryHandle: "lacteos-huevos-sub",
     sku: "GRO-BRD-EGG-023",
     weight: 2,
     priceUsd: 2.99,
@@ -182,6 +204,7 @@ const GROCERIES: SeedProduct[] = [
     handle: "fish-steak",
     description: "Quality fish steak, suitable for grilling, baking, or pan-searing.",
     categoryHandle: "carnes",
+    subcategoryHandle: "carnes-pescados",
     sku: "GRO-BRD-FIS-024",
     weight: 6,
     priceUsd: 14.99,
@@ -199,6 +222,7 @@ const GROCERIES: SeedProduct[] = [
     handle: "green-bell-pepper",
     description: "Fresh and vibrant green bell pepper, perfect for adding color and flavor to your dishes.",
     categoryHandle: "frescos",
+    subcategoryHandle: "frescos-verduras-hortalizas",
     sku: "GRO-BRD-GRE-025",
     weight: 2,
     priceUsd: 1.29,
@@ -216,6 +240,7 @@ const GROCERIES: SeedProduct[] = [
     handle: "green-chili-pepper",
     description: "Spicy green chili pepper, ideal for adding heat to your favorite recipes.",
     categoryHandle: "frescos",
+    subcategoryHandle: "frescos-verduras-hortalizas",
     sku: "GRO-BRD-GRE-026",
     weight: 7,
     priceUsd: 0.99,
@@ -233,6 +258,7 @@ const GROCERIES: SeedProduct[] = [
     handle: "honey-jar",
     description: "Pure and natural honey in a convenient jar, perfect for sweetening beverages or drizzling over food.",
     categoryHandle: "despensa",
+    subcategoryHandle: "despensa-endulzantes",
     sku: "GRO-BRD-HON-027",
     weight: 2,
     priceUsd: 6.99,
@@ -272,6 +298,7 @@ const GROCERIES: SeedProduct[] = [
     handle: "juice",
     description: "Refreshing fruit juice, packed with vitamins and great for staying hydrated.",
     categoryHandle: "bebidas",
+    subcategoryHandle: "bebidas-jugos",
     sku: "GRO-BRD-JUI-029",
     weight: 1,
     priceUsd: 3.99,
@@ -325,6 +352,7 @@ const GROCERIES: SeedProduct[] = [
     description:
       "Fresh and nutritious milk, a staple for various recipes and daily consumption.",
     categoryHandle: "lacteos-huevos",
+    subcategoryHandle: "lacteos-leche",
     sku: "GRO-BRD-MIL-032",
     weight: 5,
     priceUsd: 3.49,
@@ -361,6 +389,7 @@ const GROCERIES: SeedProduct[] = [
     description:
       "Quality coffee from Nescafe, available in various blends for a rich and satisfying cup.",
     categoryHandle: "despensa",
+    subcategoryHandle: "despensa-cafe-te",
     sku: "GRO-BRD-NES-034",
     weight: 6,
     priceUsd: 7.99,
@@ -379,6 +408,7 @@ const GROCERIES: SeedProduct[] = [
     description:
       "Versatile and starchy potatoes, great for roasting, mashing, or as a side dish.",
     categoryHandle: "frescos",
+    subcategoryHandle: "frescos-verduras-hortalizas",
     sku: "GRO-BRD-POT-035",
     weight: 9,
     priceUsd: 2.29,
@@ -415,6 +445,7 @@ const GROCERIES: SeedProduct[] = [
     description:
       "Flavorful and aromatic red onions, perfect for adding depth to your savory dishes.",
     categoryHandle: "frescos",
+    subcategoryHandle: "frescos-verduras-hortalizas",
     sku: "GRO-BRD-ONI-037",
     weight: 9,
     priceUsd: 1.99,
@@ -433,6 +464,7 @@ const GROCERIES: SeedProduct[] = [
     description:
       "High-quality rice, a staple for various cuisines and a versatile base for many dishes.",
     categoryHandle: "despensa",
+    subcategoryHandle: "despensa-pasta-arroz",
     sku: "GRO-BRD-RIC-038",
     weight: 5,
     priceUsd: 5.99,
@@ -451,10 +483,12 @@ const GROCERIES: SeedProduct[] = [
     description:
       "Assorted soft drinks in various flavors, perfect for refreshing beverages.",
     categoryHandle: "bebidas",
+    subcategoryHandle: "bebidas-gaseosas",
     sku: "GRO-BRD-SOF-039",
     weight: 9,
     priceUsd: 1.99,
     stock: 53,
+    brand: "Coca Cola",
     thumbnail: "https://cdn.dummyjson.com/product-images/groceries/soft-drinks/thumbnail.webp",
     images: ["https://cdn.dummyjson.com/product-images/groceries/soft-drinks/1.webp"],
     reviews: [
@@ -487,6 +521,7 @@ const GROCERIES: SeedProduct[] = [
     description:
       "Convenient tissue paper box for everyday use, providing soft and absorbent tissues.",
     categoryHandle: "limpieza",
+    subcategoryHandle: "limpieza-papeleria",
     sku: "GRO-BRD-TIS-041",
     weight: 1,
     priceUsd: 2.49,
@@ -508,6 +543,7 @@ const GROCERIES: SeedProduct[] = [
     description:
       "Pure and refreshing bottled water, essential for staying hydrated throughout the day.",
     categoryHandle: "bebidas",
+    subcategoryHandle: "bebidas-aguas",
     sku: "GRO-BRD-WAT-042",
     weight: 4,
     priceUsd: 0.99,
@@ -532,6 +568,7 @@ const ELECTRODOMESTICOS: SeedProduct[] = [
     description:
       "The Boxed Blender is a powerful and compact blender perfect for smoothies, shakes, and more. Its convenient design and multiple functions make it a versatile kitchen appliance.",
     categoryHandle: "electrodomesticos",
+    subcategoryHandle: "electro-pequenos",
     sku: "KIT-BRD-BOX-051",
     weight: 1,
     priceUsd: 39.99,
@@ -555,6 +592,7 @@ const ELECTRODOMESTICOS: SeedProduct[] = [
     description:
       "The Electric Stove provides a portable and efficient cooking solution. Ideal for small kitchens or as an additional cooking surface for various culinary needs.",
     categoryHandle: "electrodomesticos",
+    subcategoryHandle: "electro-coccion",
     sku: "KIT-BRD-ELE-056",
     weight: 5,
     priceUsd: 49.99,
@@ -578,6 +616,7 @@ const ELECTRODOMESTICOS: SeedProduct[] = [
     description:
       "The Hand Blender is a versatile kitchen appliance for blending, pureeing, and mixing. Its compact design and powerful motor make it a convenient tool for various recipes.",
     categoryHandle: "electrodomesticos",
+    subcategoryHandle: "electro-pequenos",
     sku: "KIT-BRD-HAN-061",
     weight: 5,
     priceUsd: 34.99,
@@ -596,6 +635,7 @@ const ELECTRODOMESTICOS: SeedProduct[] = [
     description:
       "The Microwave Oven is a versatile kitchen appliance for quick and efficient cooking, reheating, and defrosting. Its compact size makes it suitable for various kitchen setups.",
     categoryHandle: "electrodomesticos",
+    subcategoryHandle: "electro-coccion",
     sku: "KIT-BRD-MIC-066",
     weight: 9,
     priceUsd: 89.99,
@@ -906,13 +946,12 @@ const FARMACIA: SeedProduct[] = [
   },
 ];
 
-// Products with no brand in the source data — created in a single batch call.
-const UNBRANDED_PRODUCTS = [...GROCERIES, ...ELECTRODOMESTICOS];
-// Products with a distinct brand each — createProductsWorkflow only accepts
-// one shared additional_data.brand_id per call, so these are created one at
-// a time (see loop below).
-const BRANDED_PRODUCTS = [...ASEO_PERSONAL, ...FARMACIA];
-const ALL_PRODUCTS = [...UNBRANDED_PRODUCTS, ...BRANDED_PRODUCTS];
+const ALL_PRODUCTS = [...GROCERIES, ...ELECTRODOMESTICOS, ...ASEO_PERSONAL, ...FARMACIA];
+// Products with no brand — created in a single batch call. Products with a
+// brand — createProductsWorkflow only accepts one shared additional_data.brand_id
+// per call, so these are created one at a time (see loop below).
+const UNBRANDED_PRODUCTS = ALL_PRODUCTS.filter((p) => !p.brand);
+const BRANDED_PRODUCTS = ALL_PRODUCTS.filter((p) => p.brand);
 
 function toPrices(priceUsd: number) {
   const usd = Math.round(priceUsd * 100) / 100;
@@ -933,18 +972,18 @@ export default async function seedMercadoCatalog({
 
   const { data: existingProducts } = await query.graph({
     entity: "product",
-    fields: ["handle"],
+    fields: ["id", "handle", "categories.id", "brand.name"],
     filters: { handle: ALL_PRODUCTS.map((p) => p.handle) },
   });
-  const existingHandles = new Set(existingProducts.map((p: any) => p.handle));
+  const existingByHandle = new Map(existingProducts.map((p: any) => [p.handle, p]));
+  const existingHandles = new Set(existingByHandle.keys());
 
   const toCreateUnbranded = UNBRANDED_PRODUCTS.filter((p) => !existingHandles.has(p.handle));
   const toCreateBranded = BRANDED_PRODUCTS.filter((p) => !existingHandles.has(p.handle));
-
-  if (!toCreateUnbranded.length && !toCreateBranded.length) {
-    logger.info("El catálogo de mercado ya está sembrado. Nada que crear.");
-    return;
-  }
+  // Products that already exist: re-run to pick up subcategory/brand data
+  // added to the seed after they were first created (e.g. a category or
+  // brand assignment tweak) — reconciled below instead of skipped outright.
+  const toReconcile = ALL_PRODUCTS.filter((p) => existingHandles.has(p.handle));
 
   const categoryHandles = [
     "frescos",
@@ -959,10 +998,13 @@ export default async function seedMercadoCatalog({
     "electrodomesticos",
     "farmacia",
   ];
+  const subcategoryHandles = Array.from(
+    new Set(ALL_PRODUCTS.map((p) => p.subcategoryHandle).filter((h): h is string => !!h))
+  );
   const { data: categories } = await query.graph({
     entity: "product_category",
     fields: ["id", "handle"],
-    filters: { handle: categoryHandles },
+    filters: { handle: [...categoryHandles, ...subcategoryHandles] },
   });
   const categoryIdByHandle = new Map(categories.map((c: any) => [c.handle, c.id]));
   const missingCategories = categoryHandles.filter((h) => !categoryIdByHandle.has(h));
@@ -973,6 +1015,22 @@ export default async function seedMercadoCatalog({
       )}). Correr primero: pnpm medusa exec ./src/scripts/add-supermarket-categories.ts`
     );
   }
+  const missingSubcategories = subcategoryHandles.filter((h) => !categoryIdByHandle.has(h));
+  if (missingSubcategories.length) {
+    throw new Error(
+      `Faltan subcategorías requeridas (${missingSubcategories.join(
+        ", "
+      )}) — ver "DATA/SUBCATEGORIAS" en .context/backlog.md para cómo se cargaron originalmente.`
+    );
+  }
+
+  const categoryIdsFor = (p: SeedProduct): string[] => {
+    const ids = [categoryIdByHandle.get(p.categoryHandle) as string];
+    if (p.subcategoryHandle) {
+      ids.push(categoryIdByHandle.get(p.subcategoryHandle) as string);
+    }
+    return ids;
+  };
 
   const { data: shippingProfiles } = await query.graph({
     entity: "shipping_profile",
@@ -1002,9 +1060,11 @@ export default async function seedMercadoCatalog({
     throw new Error("No hay stock location en la BD. Correr primero el seed inicial.");
   }
 
-  // 1) Brands — reuse existing brand by name, create missing ones.
+  // 1) Brands — reuse existing brand by name, create missing ones. Includes
+  // brands needed by toReconcile (e.g. an existing product gaining a brand
+  // it didn't have when first seeded), not just toCreateBranded.
   const brandNames = Array.from(
-    new Set(toCreateBranded.map((p) => p.brand).filter((b): b is string => !!b))
+    new Set([...toCreateBranded, ...toReconcile].map((p) => p.brand).filter((b): b is string => !!b))
   );
   const { data: existingBrands } = await query.graph({
     entity: "brand",
@@ -1021,13 +1081,49 @@ export default async function seedMercadoCatalog({
   }
   logger.info(`Marcas listas: ${brandNames.join(", ") || "(ninguna nueva)"}`);
 
+  // 1.5) Reconcile products that already existed: add any missing
+  // subcategory/parent category, and (re)assign brand if it changed.
+  let reconciledCount = 0;
+  for (const p of toReconcile) {
+    const existing = existingByHandle.get(p.handle) as any;
+    const currentCategoryIds = new Set((existing.categories ?? []).map((c: any) => c.id));
+    const desiredCategoryIds = categoryIdsFor(p);
+    const missingCategoryIds = desiredCategoryIds.filter((id) => !currentCategoryIds.has(id));
+    const categoryNeedsUpdate = missingCategoryIds.length > 0;
+
+    const currentBrandName = existing.brand?.name ?? null;
+    const brandNeedsUpdate = !!p.brand && p.brand !== currentBrandName;
+
+    if (!categoryNeedsUpdate && !brandNeedsUpdate) continue;
+
+    await updateProductsWorkflow(container).run({
+      input: {
+        products: [
+          {
+            id: existing.id,
+            category_ids: categoryNeedsUpdate
+              ? [...currentCategoryIds, ...missingCategoryIds]
+              : undefined,
+          },
+        ],
+        additional_data: brandNeedsUpdate
+          ? { brand_id: brandIdByName.get(p.brand as string) }
+          : undefined,
+      },
+    });
+    reconciledCount++;
+  }
+  if (reconciledCount) {
+    logger.info(`Reconciliados ${reconciledCount} productos existentes (subcategoría y/o marca).`);
+  }
+
   // 2) Products — unbranded products go in a single batch call; branded
   // products are created one at a time (see UNBRANDED_PRODUCTS/BRANDED_PRODUCTS above).
   const buildProductInput = (p: SeedProduct) => ({
     title: p.title,
     handle: p.handle,
     description: p.description,
-    category_ids: [categoryIdByHandle.get(p.categoryHandle) as string],
+    category_ids: categoryIdsFor(p),
     weight: p.weight,
     status: ProductStatus.PUBLISHED,
     shipping_profile_id: shippingProfile.id,
@@ -1123,10 +1219,15 @@ export default async function seedMercadoCatalog({
   }
   logger.info(`Creadas ${reviewCount} reseñas.`);
 
+  if (!toCreateUnbranded.length && !toCreateBranded.length && !reconciledCount) {
+    logger.info("El catálogo de mercado ya está sembrado y al día. Nada que crear ni reconciliar.");
+    return;
+  }
+
   logger.info("Catálogo de mercado sembrado correctamente.");
-  if (toCreateUnbranded.length || toCreateBranded.length) {
+  if (toCreateUnbranded.length || toCreateBranded.length || reconciledCount) {
     logger.info(
-      "Recordá correr `pnpm medusa exec ./src/scripts/reindex-search.ts` — el Index Engine no se entera de productos/marcas creados por un script medusa exec hasta que se fuerza un reindex (ver comentario en ese archivo)."
+      "Recordá correr `pnpm medusa exec ./src/scripts/reindex-search.ts` — el Index Engine no se entera de productos/marcas creados o actualizados por un script medusa exec hasta que se fuerza un reindex (ver comentario en ese archivo)."
     );
   }
 }
