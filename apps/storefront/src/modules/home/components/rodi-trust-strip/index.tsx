@@ -31,13 +31,13 @@ const items = [
 export default function RodiTrustStrip() {
   return (
     <section className="content-container py-6">
-      <div className="grid grid-cols-1 small:grid-cols-2 lg:grid-cols-4 bg-rm-paper border border-rm-line rounded-rm-lg overflow-hidden">
+      <div className="grid grid-cols-1 small:grid-cols-4 bg-rm-paper border border-rm-line rounded-rm-lg overflow-hidden">
         {items.map(({ icon: Icon, title, subtitle }, i) => (
           <div
             key={title}
             className={`flex items-center gap-3 px-5 py-4 ${
-              i < items.length - 1 ? "lg:border-r border-rm-line-2" : ""
-            } ${i % 2 === 0 && i < items.length - 1 ? "small:border-r" : ""}`}
+              i < items.length - 1 ? "small:border-r border-rm-line-2" : ""
+            }`}
           >
             <div className="w-10 h-10 rounded-lg bg-rm-s-pink text-rm-red grid place-items-center shrink-0">
               <Icon size={20} />
