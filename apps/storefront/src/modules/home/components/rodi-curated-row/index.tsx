@@ -34,7 +34,7 @@ export default async function RodiCuratedRow({
     response: { products },
   } = await listProducts({
     regionId: region.id,
-    queryParams: { category_id: categoryIds, limit: 6 },
+    queryParams: { category_id: categoryIds, limit: 12 },
   })
 
   if (!products.length) {
@@ -44,7 +44,7 @@ export default async function RodiCuratedRow({
   return (
     <section className="content-container py-8">
       <RodiSectionHead kicker={kicker} title={title} />
-      <ul className="grid grid-cols-2 small:grid-cols-3 lg:grid-cols-6 gap-x-3.5 gap-y-8">
+      <ul className="grid grid-cols-2 small:grid-cols-6 gap-x-3.5 gap-y-8">
         {products.map((product) => (
           <li key={product.id}>
             <ProductPreview product={product} region={region} />
