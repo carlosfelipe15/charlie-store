@@ -38,39 +38,47 @@ export function getCategoryEmoji(name?: string | null): string {
  * Decorative only — intentionally static in the frontend rather than a
  * backend field, since these ~14 values don't need to be editable without a
  * deploy. `token` is a `bg-rm-s-*` Tailwind class (see tailwind.config.js
- * `colors.rm`).
+ * `colors.rm`). `image` points at a curated photo under `public/images/categories/`
+ * (sourced from Unsplash, see CREDITS.md in that folder) — `emoji`/`token`
+ * stay as the fallback for categories outside this curated set (e.g. demo
+ * apparel) and as the loading-state background behind the photo.
  */
 const CATEGORY_VISUAL_BY_HANDLE: Record<
   string,
-  { emoji: string; token: string; desc: string }
+  { emoji: string; token: string; desc: string; image: string }
 > = {
-  frescos: { emoji: "🥬", token: "bg-rm-s-mint", desc: "Cosechado esta semana" },
-  despensa: { emoji: "🍝", token: "bg-rm-s-butter", desc: "Pasta, granos, aceites" },
-  "lacteos-huevos": { emoji: "🥛", token: "bg-rm-s-sky", desc: "Leche, quesos, yogurt" },
-  carnes: { emoji: "🥩", token: "bg-rm-s-pink", desc: "Frescos del día" },
-  panaderia: { emoji: "🥖", token: "bg-rm-s-peach", desc: "Horneado en casa" },
-  bebidas: { emoji: "🥤", token: "bg-rm-s-sky", desc: "Refrescos, jugos, agua" },
-  "snacks-dulces": { emoji: "🍫", token: "bg-rm-s-butter", desc: "Antojos para todos" },
-  congelados: { emoji: "🧊", token: "bg-rm-s-sky", desc: "Listos en minutos" },
-  "aseo-personal": { emoji: "🧴", token: "bg-rm-s-lilac", desc: "Cuidado e higiene" },
-  limpieza: { emoji: "🧽", token: "bg-rm-s-mint", desc: "Hogar impecable" },
-  mascotas: { emoji: "🐶", token: "bg-rm-s-peach", desc: "Para tu compañero" },
-  bebe: { emoji: "🍼", token: "bg-rm-s-pink", desc: "Pañales, fórmula, papillas" },
-  electrodomesticos: { emoji: "🔌", token: "bg-rm-s-sand", desc: "Para tu cocina y hogar" },
-  farmacia: { emoji: "💊", token: "bg-rm-s-mint", desc: "Cuidado y bienestar" },
+  frescos: { emoji: "🥬", token: "bg-rm-s-mint", desc: "Cosechado esta semana", image: "/images/categories/frescos.jpg" },
+  despensa: { emoji: "🍝", token: "bg-rm-s-butter", desc: "Pasta, granos, aceites", image: "/images/categories/despensa.jpg" },
+  "lacteos-huevos": { emoji: "🥛", token: "bg-rm-s-sky", desc: "Leche, quesos, yogurt", image: "/images/categories/lacteos-huevos.jpg" },
+  carnes: { emoji: "🥩", token: "bg-rm-s-pink", desc: "Frescos del día", image: "/images/categories/carnes.jpg" },
+  panaderia: { emoji: "🥖", token: "bg-rm-s-peach", desc: "Horneado en casa", image: "/images/categories/panaderia.jpg" },
+  bebidas: { emoji: "🥤", token: "bg-rm-s-sky", desc: "Refrescos, jugos, agua", image: "/images/categories/bebidas.jpg" },
+  "snacks-dulces": { emoji: "🍫", token: "bg-rm-s-butter", desc: "Antojos para todos", image: "/images/categories/snacks-dulces.jpg" },
+  congelados: { emoji: "🧊", token: "bg-rm-s-sky", desc: "Listos en minutos", image: "/images/categories/congelados.jpg" },
+  "aseo-personal": { emoji: "🧴", token: "bg-rm-s-lilac", desc: "Cuidado e higiene", image: "/images/categories/aseo-personal.jpg" },
+  limpieza: { emoji: "🧽", token: "bg-rm-s-mint", desc: "Hogar impecable", image: "/images/categories/limpieza.jpg" },
+  mascotas: { emoji: "🐶", token: "bg-rm-s-peach", desc: "Para tu compañero", image: "/images/categories/mascotas.jpg" },
+  bebe: { emoji: "🍼", token: "bg-rm-s-pink", desc: "Pañales, fórmula, papillas", image: "/images/categories/bebe.jpg" },
+  electrodomesticos: { emoji: "🔌", token: "bg-rm-s-sand", desc: "Para tu cocina y hogar", image: "/images/categories/electrodomesticos.jpg" },
+  farmacia: { emoji: "💊", token: "bg-rm-s-mint", desc: "Cuidado y bienestar", image: "/images/categories/farmacia.jpg" },
 }
 
 const DEFAULT_TOKEN = "bg-rm-line-2"
 
-export type CategoryVisual = { emoji: string; token: string; desc?: string }
+export type CategoryVisual = {
+  emoji: string
+  token: string
+  desc?: string
+  image?: string
+}
 
 /**
- * Resolves emoji + surface color + tagline for a category tile. Looks up by
- * `handle` first (exact match against the Rodi Mercado design categories);
- * falls back to keyword matching on `name` for categories outside that set
- * (e.g. the demo apparel categories still used for QA), and finally to a
- * neutral token. `desc` is only defined for the curated 14 — callers should
- * treat it as optional.
+ * Resolves emoji + surface color + tagline + photo for a category tile.
+ * Looks up by `handle` first (exact match against the Rodi Mercado design
+ * categories); falls back to keyword matching on `name` for categories
+ * outside that set (e.g. the demo apparel categories still used for QA,
+ * which have no curated photo), and finally to a neutral token. `desc`/`image`
+ * are only defined for the curated 14 — callers should treat them as optional.
  */
 export function getCategoryVisual(
   handle?: string | null,

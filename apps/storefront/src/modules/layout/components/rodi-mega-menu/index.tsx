@@ -6,6 +6,7 @@ import { RodiBadge, RodiBtnLink } from "@modules/common/components/rodi"
 import { RodiIconChevron } from "@modules/common/icons/rodi"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { clsx } from "clsx"
+import Image from "next/image"
 import { useMemo, useState } from "react"
 
 type RodiMegaMenuProps = {
@@ -43,6 +44,7 @@ export default function RodiMegaMenu({
       <div className="p-3 border-r border-rm-line-2 max-h-[420px] overflow-y-auto">
         {parents.slice(0, 12).map((cat) => {
           const isActive = cat.id === active?.id
+          const visual = getCategoryVisual(cat.handle, cat.name)
           return (
             <button
               key={cat.id}
@@ -57,9 +59,15 @@ export default function RodiMegaMenu({
               )}
             >
               <span className="inline-flex items-center gap-2.5 min-w-0">
-                <span className="text-lg shrink-0" aria-hidden>
-                  {getCategoryVisual(cat.handle, cat.name).emoji}
-                </span>
+                {visual.image ? (
+                  <span className="relative h-6 w-6 shrink-0 overflow-hidden rounded-full">
+                    <Image src={visual.image} alt="" fill sizes="24px" className="object-cover" />
+                  </span>
+                ) : (
+                  <span className="text-lg shrink-0" aria-hidden>
+                    {visual.emoji}
+                  </span>
+                )}
                 <span className="truncate">{cat.name}</span>
               </span>
               <RodiIconChevron size={12} chevronDirection="right" />

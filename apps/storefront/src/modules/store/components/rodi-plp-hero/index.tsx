@@ -1,9 +1,13 @@
+import Image from "next/image"
+
 type RodiPlpHeroProps = {
   title: string
   subtitle?: string
   /** Exact product count for the current listing — rendered as "N productos". */
   productCount?: number
   emoji?: string
+  /** Curated category photo — takes precedence over `emoji` when present. */
+  image?: string
 }
 
 export default function RodiPlpHero({
@@ -11,6 +15,7 @@ export default function RodiPlpHero({
   subtitle,
   productCount,
   emoji = "🛒",
+  image,
 }: RodiPlpHeroProps) {
   const descriptionLine = [
     productCount != null ? `${productCount.toLocaleString("es-CO")} productos` : null,
@@ -37,9 +42,15 @@ export default function RodiPlpHero({
           <p className="text-sm text-rm-ink-2 mt-2">{descriptionLine}</p>
         )}
       </div>
-      <span className="text-6xl md:text-7xl hidden sm:block" aria-hidden>
-        {emoji}
-      </span>
+      {image ? (
+        <div className="relative hidden h-24 w-24 shrink-0 overflow-hidden rounded-rm-lg shadow-sm sm:block md:h-28 md:w-28">
+          <Image src={image} alt="" fill sizes="112px" className="object-cover" />
+        </div>
+      ) : (
+        <span className="text-6xl md:text-7xl hidden sm:block" aria-hidden>
+          {emoji}
+        </span>
+      )}
     </section>
   )
 }

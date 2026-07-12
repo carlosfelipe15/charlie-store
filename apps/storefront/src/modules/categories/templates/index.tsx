@@ -72,10 +72,11 @@ export default async function CategoryTemplate({
         handle: c.handle ?? "",
       })) ?? []
 
-  // Same reasoning for the hero emoji: the curated visual map only has
+  // Same reasoning for the hero emoji/photo: the curated visual map only has
   // entries for the top-level categories, so a subcategory would otherwise
-  // fall back to the generic default instead of its parent's emoji.
+  // fall back to the generic default instead of its parent's emoji/photo.
   const visualSource = parentCategory ?? category
+  const visual = getCategoryVisual(visualSource.handle, visualSource.name)
 
   return (
     <div className="py-6 content-container" data-testid="category-container">
@@ -83,7 +84,8 @@ export default async function CategoryTemplate({
         title={category.name ?? "Categoría"}
         subtitle={category.description ?? undefined}
         productCount={productCount}
-        emoji={getCategoryVisual(visualSource.handle, visualSource.name).emoji}
+        emoji={visual.emoji}
+        image={visual.image}
       />
       {subcategories.length > 0 && (
         <RodiCategoryChips
