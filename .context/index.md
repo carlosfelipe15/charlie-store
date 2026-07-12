@@ -2,7 +2,7 @@
 
 Punto de entrada a `.context/`. Actualizar cada vez que cambie la fase activa o se shippee un feature.
 
-**Última actualización:** 2026-07-10 (changelogs de reviews/favorites posteriores a su fase inicial)
+**Última actualización:** 2026-07-12 (más productos de dummyjson + fix de Index Engine desactualizado — ver `backlog.md` `[DATA/CATALOGO]`, `[DATA/INDEX-STALE]`, `[BUG/ADMIN-INDEX]`)
 
 ## Fase actual
 
