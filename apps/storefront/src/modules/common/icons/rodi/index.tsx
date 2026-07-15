@@ -5,10 +5,13 @@ import {
   ChevronDown,
   ChevronLeft,
   Heart,
+  LayoutDashboard,
   Leaf,
+  LogOut,
   MapPin,
   Menu,
   Minus,
+  Package,
   Plus,
   Search,
   Shield,
@@ -140,6 +143,19 @@ export const RodiIconBag: React.FC<IconProps> = ({ size = 18, ...props }) => (
   <ShoppingBag size={size} strokeWidth={1.75} {...props} />
 )
 
+export const RodiIconDashboard: React.FC<IconProps> = ({
+  size = 18,
+  ...props
+}) => <LayoutDashboard size={size} strokeWidth={1.75} {...props} />
+
+export const RodiIconPackage: React.FC<IconProps> = ({ size = 18, ...props }) => (
+  <Package size={size} strokeWidth={1.75} {...props} />
+)
+
+export const RodiIconLogOut: React.FC<IconProps> = ({ size = 18, ...props }) => (
+  <LogOut size={size} strokeWidth={1.75} {...props} />
+)
+
 /** All Rodi icons for the design-system gallery */
 export const rodiIconGallery: {
   name: string
@@ -165,4 +181,7 @@ export const rodiIconGallery: {
   { name: "filter", Icon: RodiIconFilter },
   { name: "sort", Icon: RodiIconSort },
   { name: "bag", Icon: RodiIconBag },
+  { name: "dashboard", Icon: RodiIconDashboard },
+  { name: "package", Icon: RodiIconPackage },
+  { name: "logout", Icon: RodiIconLogOut },
 ]

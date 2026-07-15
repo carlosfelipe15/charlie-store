@@ -3,15 +3,23 @@
 import { signout } from "@lib/data/customer"
 import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import {
+  RodiIconDashboard,
+  RodiIconHeart,
+  RodiIconLogOut,
+  RodiIconPackage,
+  RodiIconPin,
+  RodiIconUser,
+} from "@modules/common/icons/rodi"
 import { useParams, usePathname } from "next/navigation"
 import { clsx } from "clsx"
 
 const NAV_ITEMS = [
-  { href: "/account", label: "Resumen", emoji: "📊" },
-  { href: "/account/orders", label: "Mis pedidos", emoji: "📦" },
-  { href: "/account/addresses", label: "Direcciones", emoji: "📍" },
-  { href: "/account/favorites", label: "Favoritos", emoji: "❤️" },
-  { href: "/account/profile", label: "Perfil", emoji: "👤" },
+  { href: "/account", label: "Resumen", Icon: RodiIconDashboard },
+  { href: "/account/orders", label: "Mis pedidos", Icon: RodiIconPackage },
+  { href: "/account/addresses", label: "Direcciones", Icon: RodiIconPin },
+  { href: "/account/favorites", label: "Favoritos", Icon: RodiIconHeart },
+  { href: "/account/profile", label: "Perfil", Icon: RodiIconUser },
 ] as const
 
 export default function RodiAccountNav({
@@ -49,9 +57,7 @@ export default function RodiAccountNav({
                   : "text-rm-ink-2 hover:bg-rm-line-2 hover:text-rm-ink"
               )}
             >
-              <span className="text-base" aria-hidden>
-                {item.emoji}
-              </span>
+              <item.Icon size={18} aria-hidden />
               <span className="flex-1">{item.label}</span>
             </LocalizedClientLink>
           </li>
@@ -63,9 +69,7 @@ export default function RodiAccountNav({
             data-testid="logout-button"
             className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-semibold text-rm-ink-2 hover:bg-rm-line-2 hover:text-rm-ink"
           >
-            <span className="text-base" aria-hidden>
-              ↩
-            </span>
+            <RodiIconLogOut size={18} aria-hidden />
             <span>Salir</span>
           </button>
         </li>
