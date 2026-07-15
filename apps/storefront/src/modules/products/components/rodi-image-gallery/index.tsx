@@ -15,12 +15,20 @@ type RodiImageGalleryProps = {
   images: HttpTypes.StoreProductImage[]
   productId?: string
   isFavorited?: boolean
+  /**
+   * Small, contained packshot instead of the large hero image — for
+   * everyday grocery items where the photo doesn't carry purchase-decision
+   * weight the way it does for apparel/appliances. See
+   * lib/util/product.ts#shouldUseCompactGallery.
+   */
+  compact?: boolean
 }
 
 export default function RodiImageGallery({
   images,
   productId,
   isFavorited = false,
+  compact = false,
 }: RodiImageGalleryProps) {
   const router = useRouter()
   const { showToast } = useToast()
@@ -88,7 +96,12 @@ export default function RodiImageGallery({
         ))}
       </div>
 
-      <div className="relative bg-rm-paper border border-rm-line rounded-rm-lg p-4 md:p-6 aspect-square">
+      <div
+        className={clsx(
+          "relative bg-rm-paper border border-rm-line rounded-rm-lg aspect-square",
+          compact ? "max-w-[420px] p-10 md:p-12" : "p-4 md:p-6"
+        )}
+      >
         {productId && (
           <button
             type="button"
@@ -112,8 +125,11 @@ export default function RodiImageGallery({
             alt="Producto"
             fill
             priority
-            className="object-cover rounded-rm-md"
-            sizes="(max-width: 768px) 100vw, 50vw"
+            className={clsx(
+              "rounded-rm-md",
+              compact ? "object-contain" : "object-cover"
+            )}
+            sizes={compact ? "420px" : "(max-width: 768px) 100vw, 50vw"}
           />
         )}
       </div>

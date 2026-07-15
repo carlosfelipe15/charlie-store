@@ -12,6 +12,8 @@ import RodiProductReviews from "@modules/products/components/rodi-product-review
 import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products"
 import { notFound } from "next/navigation"
 import { HttpTypes } from "@medusajs/types"
+import { clsx } from "clsx"
+import { shouldUseCompactGallery } from "@lib/util/product"
 
 import ProductActionsWrapper from "./product-actions-wrapper"
 
@@ -34,6 +36,7 @@ async function ProductTemplate({
 
   const favoritedProductIds = await getFavoritedProductIds()
   const isFavorited = favoritedProductIds.has(product.id)
+  const compactGallery = shouldUseCompactGallery(product)
 
   const breadcrumbItems = [
     { label: "Inicio", href: "/" },
@@ -54,12 +57,20 @@ async function ProductTemplate({
       <div className="content-container" data-testid="product-container">
         <RodiBreadcrumbs items={breadcrumbItems} />
 
-        <main className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px] gap-8 lg:gap-10 pb-10">
+        <main
+          className={clsx(
+            "grid grid-cols-1 gap-8 lg:gap-10 pb-10",
+            compactGallery
+              ? "lg:grid-cols-[minmax(0,504px)_minmax(0,480px)] lg:justify-center"
+              : "lg:grid-cols-[minmax(0,1fr)_420px]"
+          )}
+        >
           <div className="flex flex-col gap-8 min-w-0">
             <RodiImageGallery
               images={images}
               productId={product.id}
               isFavorited={isFavorited}
+              compact={compactGallery}
             />
             <div className="hidden lg:block">
               <ProductTabs product={product} />

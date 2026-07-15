@@ -89,6 +89,12 @@ Ambas features custom del backend ya están conectadas al storefront:
 
 Detalle de cada una: [custom-features/brands.md](./custom-features/brands.md), [custom-features/reviews.md](./custom-features/reviews.md). Filtro por marca en el listado (PLP) todavía no existe — el backend ya expone `GET /store/brands` para eso.
 
+## Galería de imágenes en PDP: compacta vs. hero
+
+`modules/products/components/rodi-image-gallery/` acepta un prop `compact` — cuando es `true`, la imagen principal queda contenida (`max-w-[420px]`, `object-contain`, más padding) en vez del tratamiento grande a todo el ancho disponible (`object-cover`, sin tope). `modules/products/templates/index.tsx` decide el valor con `shouldUseCompactGallery(product)` (`lib/util/product.ts`): compacta solo si el producto pertenece a una de las categorías curadas de Rodi Mercado (`CURATED_CATEGORY_HANDLES` en `lib/util/category-emoji.ts`, excluyendo `electrodomesticos`) **y** no tiene opciones de variante tipo Talla/Size/Color. Responde a las dos variantes de PDP del diseño de referencia (`pdp.jsx`): PDPv1/v2 ("hero", apparel/electrodomésticos) vs. PDPv3 ("Grocery-density", productos de reposición rápida). Requiere que el fetch de producto pida `categories.handle` (ya lo hace `lib/data/products.ts` por defecto); si se agrega otro punto de fetch de producto para la PDP, hay que pedir ese campo también o `shouldUseCompactGallery` siempre devuelve `false`.
+
+El grid de dos columnas del `<main>` en `templates/index.tsx` también depende de este flag: en modo hero usa `grid-cols-[minmax(0,1fr)_420px]` (imagen fluida, info fija); en modo compacto usa columnas de ancho fijo ajustado al contenido (`grid-cols-[minmax(0,504px)_minmax(0,480px)]` + `justify-center`) para centrar el bloque imagen+info en vez de dejar la imagen chica pegada al borde con un hueco vacío antes de la columna de info. Si se ajusta el padding/ancho interno de `rodi-image-gallery` en modo compacto, hay que revisar que `504px` siga cubriendo el ancho real de miniaturas + imagen (72px + gap-3 + 420px).
+
 ## Añadir una página nueva
 
 1. Crear ruta bajo `src/app/[countryCode]/(main)/...`

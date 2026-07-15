@@ -63,6 +63,9 @@ const CATEGORY_VISUAL_BY_HANDLE: Record<
   farmacia: { emoji: "💊", token: "bg-rm-s-mint", desc: "Cuidado y bienestar", image: "/images/categories/farmacia.jpg" },
 }
 
+/** Handles of the curated Rodi Mercado categories (see CATEGORY_VISUAL_BY_HANDLE above). */
+export const CURATED_CATEGORY_HANDLES = Object.keys(CATEGORY_VISUAL_BY_HANDLE)
+
 const DEFAULT_TOKEN = "bg-rm-line-2"
 
 export type CategoryVisual = {

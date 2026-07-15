@@ -2,7 +2,7 @@
 
 Punto de entrada a `.context/`. Actualizar cada vez que cambie la fase activa o se shippee un feature.
 
-**Última actualización:** 2026-07-12 (más productos de dummyjson + fix de Index Engine desactualizado — ver `backlog.md` `[DATA/CATALOGO]`, `[DATA/INDEX-STALE]`, `[BUG/ADMIN-INDEX]`)
+**Última actualización:** 2026-07-14 (galería de PDP compacta para productos de almacén/grocery — ver `backlog.md` `[UI/PDP-GALERIA]`)
 
 ## Fase actual
 
