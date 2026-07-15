@@ -90,9 +90,16 @@ export const listProducts = async ({
 }
 
 /**
- * This will fetch 100 products to the Next.js cache and sort them based on the sortBy parameter.
- * It will then return the paginated products based on the page and limit parameters.
+ * Returns one page of products for the given sort order.
+ *
+ * `created_at` is a real column the backend can order and paginate, so that
+ * path fetches exactly one page (limit + offset) — no over-fetch. Price sorting
+ * is the only case that can't be pushed down: `calculated_price` is computed
+ * per-region by the pricing module, not a sortable column, so it still has to
+ * fetch a bounded window and sort in memory.
  */
+const PRICE_SORT_WINDOW = 100
+
 export const listProductsWithSort = async ({
   page = 0,
   queryParams,
@@ -109,25 +116,41 @@ export const listProductsWithSort = async ({
   queryParams?: HttpTypes.FindParams & HttpTypes.StoreProductParams
 }> => {
   const limit = queryParams?.limit || 12
+  const pageNumber = Math.max(page, 1)
 
+  if (sortBy !== "price_asc" && sortBy !== "price_desc") {
+    // created_at (default): true backend pagination, newest first.
+    return listProducts({
+      pageParam: pageNumber,
+      queryParams: {
+        ...queryParams,
+        limit,
+        order: "-created_at",
+      },
+      countryCode,
+    })
+  }
+
+  // Price sort: fetch a bounded window, sort in memory, slice the page. Beyond
+  // PRICE_SORT_WINDOW products in a single list the ordering is approximate —
+  // acceptable for this catalog's size; revisit if the backend gains price
+  // sorting or catalogs grow past it.
   const {
     response: { products, count },
   } = await listProducts({
-    pageParam: 0,
+    pageParam: 1,
     queryParams: {
       ...queryParams,
-      limit: 100,
+      limit: PRICE_SORT_WINDOW,
     },
     countryCode,
   })
 
   const sortedProducts = sortProducts(products, sortBy)
 
-  const pageParam = (page - 1) * limit
-
-  const nextPage = count > pageParam + limit ? pageParam + limit : null
-
-  const paginatedProducts = sortedProducts.slice(pageParam, pageParam + limit)
+  const offset = (pageNumber - 1) * limit
+  const nextPage = count > offset + limit ? pageNumber + 1 : null
+  const paginatedProducts = sortedProducts.slice(offset, offset + limit)
 
   return {
     response: {

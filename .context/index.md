@@ -2,7 +2,7 @@
 
 Punto de entrada a `.context/`. Actualizar cada vez que cambie la fase activa o se shippee un feature.
 
-**Última actualización:** 2026-07-14 (galería de PDP compacta para productos de almacén/grocery — ver `backlog.md` `[UI/PDP-GALERIA]`)
+**Última actualización:** 2026-07-14 (rendimiento de navegación del storefront: N+1 de cart-line en la grilla, `*products` en el header, over-fetch del listado — ver `backlog.md` `[PERF/STOREFRONT-NAV]`)
 
 ## Fase actual
 

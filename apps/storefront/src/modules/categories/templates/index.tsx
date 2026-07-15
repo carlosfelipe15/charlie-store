@@ -102,9 +102,7 @@ export default async function CategoryTemplate({
         <div className="w-full min-w-0 flex-1">
           <Suspense
             fallback={
-              <SkeletonProductGrid
-                numberOfProducts={category.products?.length ?? 8}
-              />
+              <SkeletonProductGrid numberOfProducts={8} />
             }
           >
             <PaginatedProducts

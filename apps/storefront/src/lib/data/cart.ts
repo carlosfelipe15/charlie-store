@@ -1,6 +1,7 @@
 "use server"
 
 import { sdk } from "@lib/config"
+import { getCartLineForVariant } from "@lib/util/cart-line"
 import medusaError, { getMedusaErrorMessage } from "@lib/util/medusa-error"
 import { HttpTypes } from "@medusajs/types"
 import { revalidateTag } from "next/cache"
@@ -137,7 +138,7 @@ export async function addToCart({
     ...(await getAuthHeaders()),
   }
 
-  await sdk.store.cart
+  const { cart: updatedCart } = await sdk.store.cart
     .createLineItem(
       cart.id,
       {
@@ -147,14 +148,21 @@ export async function addToCart({
       {},
       headers
     )
-    .then(async () => {
+    .then(async (response) => {
       const cartCacheTag = await getCacheTag("carts")
       revalidateTag(cartCacheTag)
 
       const fulfillmentCacheTag = await getCacheTag("fulfillment")
       revalidateTag(fulfillmentCacheTag)
+
+      return response
     })
     .catch(medusaError)
+
+  // Returned so a caller that renders per-variant quantity controls (the
+  // product card) can show them immediately, instead of issuing another
+  // round-trip just to learn the new line's id.
+  return getCartLineForVariant(updatedCart, variantId)
 }
 
 export async function updateLineItem({

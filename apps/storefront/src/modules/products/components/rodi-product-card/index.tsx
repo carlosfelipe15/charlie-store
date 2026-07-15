@@ -5,8 +5,8 @@ import {
   deleteLineItem,
   updateLineItem,
 } from "@lib/data/cart"
-import { getCartLineForVariant } from "@lib/data/cart-line"
 import { addFavorite, removeFavorite } from "@lib/data/favorites"
+import { CartLine } from "@lib/util/cart-line"
 import {
   canQuickAddFromCard,
   getQuickAddVariantId,
@@ -21,7 +21,7 @@ import Thumbnail from "@modules/products/components/thumbnail"
 import RodiQtyAdder from "@modules/products/components/rodi-qty-adder"
 import { clsx } from "clsx"
 import { useParams, useRouter } from "next/navigation"
-import { useCallback, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { VariantPrice } from "types/global"
 
 export type RodiProductCardProps = {
@@ -29,6 +29,8 @@ export type RodiProductCardProps = {
   cheapestPrice: VariantPrice | null
   isFeatured?: boolean
   isFavorited?: boolean
+  /** This product's line in the cart, resolved server-side by the parent. */
+  cartLine?: CartLine | null
   /** Compact rail: FAB + on image only */
   layout?: "grid" | "compact"
 }
@@ -62,14 +64,14 @@ export default function RodiProductCard({
   cheapestPrice,
   isFeatured,
   isFavorited = false,
+  cartLine = null,
   layout = "grid",
 }: RodiProductCardProps) {
   const router = useRouter()
   const { countryCode } = useParams<{ countryCode: string }>()
   const { showToast } = useToast()
   const [isAdding, setIsAdding] = useState(false)
-  const [lineId, setLineId] = useState<string | null>(null)
-  const [qty, setQty] = useState(0)
+  const [line, setLine] = useState<CartLine | null>(cartLine)
   const [favorited, setFavorited] = useState(isFavorited)
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false)
 
@@ -82,41 +84,27 @@ export default function RodiProductCard({
       ? `−${cheapestPrice.percentage_diff}%`
       : "Oferta"
 
-  const syncCartLine = useCallback(async () => {
-    if (!quickAddVariantId) return
-    const line = await getCartLineForVariant(quickAddVariantId)
-    if (line) {
-      setLineId(line.lineId)
-      setQty(line.quantity)
-    } else {
-      setLineId(null)
-      setQty(0)
-    }
-  }, [quickAddVariantId])
+  const qty = line?.quantity ?? 0
 
+  // `line` is updated optimistically on click; this re-syncs it with the server
+  // once router.refresh() re-renders the card with a fresh prop (which also
+  // covers the cart changing somewhere else on the page).
   useEffect(() => {
-    if (quickAdd) {
-      syncCartLine()
-    }
-  }, [quickAdd, syncCartLine])
-
-  const refreshCart = () => {
-    router.refresh()
-    syncCartLine()
-  }
+    setLine(cartLine)
+  }, [cartLine?.lineId, cartLine?.quantity])
 
   const handleAdd = async () => {
     if (!quickAddVariantId || !countryCode) return
 
     setIsAdding(true)
     try {
-      await addToCart({
+      const created = await addToCart({
         variantId: quickAddVariantId,
         quantity: 1,
         countryCode,
       })
-      await syncCartLine()
-      refreshCart()
+      setLine(created)
+      router.refresh()
     } finally {
       setIsAdding(false)
     }
@@ -127,36 +115,38 @@ export default function RodiProductCard({
 
     setIsAdding(true)
     try {
-      if (lineId) {
-        await updateLineItem({ lineId, quantity: qty + 1 })
+      if (line) {
+        const quantity = line.quantity + 1
+        await updateLineItem({ lineId: line.lineId, quantity })
+        setLine({ ...line, quantity })
       } else {
-        await addToCart({
+        const created = await addToCart({
           variantId: quickAddVariantId,
           quantity: 1,
           countryCode,
         })
+        setLine(created)
       }
-      await syncCartLine()
-      refreshCart()
+      router.refresh()
     } finally {
       setIsAdding(false)
     }
   }
 
   const handleDecrease = async () => {
-    if (!lineId || qty <= 0) return
+    if (!line || line.quantity <= 0) return
 
     setIsAdding(true)
     try {
-      if (qty <= 1) {
-        await deleteLineItem(lineId)
-        setLineId(null)
-        setQty(0)
+      if (line.quantity <= 1) {
+        await deleteLineItem(line.lineId)
+        setLine(null)
       } else {
-        await updateLineItem({ lineId, quantity: qty - 1 })
+        const quantity = line.quantity - 1
+        await updateLineItem({ lineId: line.lineId, quantity })
+        setLine({ ...line, quantity })
       }
-      await syncCartLine()
-      refreshCart()
+      router.refresh()
     } finally {
       setIsAdding(false)
     }
@@ -186,7 +176,7 @@ export default function RodiProductCard({
     e.stopPropagation()
   }
 
-  const showQty = quickAdd && qty > 0 && lineId
+  const showQty = quickAdd && qty > 0 && line
   const isCompact = layout === "compact"
 
   return (

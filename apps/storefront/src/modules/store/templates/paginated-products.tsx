@@ -61,9 +61,8 @@ export default async function PaginatedProducts({
     queryParams["id"] = productsIds
   }
 
-  if (sortBy === "created_at") {
-    queryParams["order"] = "created_at"
-  }
+  // Ordering is owned by listProductsWithSort (it decides backend `order` vs
+  // in-memory price sort), so no `order` is set here.
 
   const region = await getRegion(countryCode)
 
