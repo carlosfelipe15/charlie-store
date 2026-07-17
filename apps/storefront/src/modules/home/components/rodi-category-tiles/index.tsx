@@ -5,7 +5,12 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 import Image from "next/image"
 
 export default async function RodiCategoryTiles() {
-  const categories = await listCategories({ limit: 14 })
+  // No explicit `limit`: this endpoint returns categories and subcategories
+  // mixed together, so a low limit risks truncating the raw page before the
+  // top-level filter below runs (a subcategory in that window pushes a
+  // top-level category out) — fetch everything (default limit), filter, then
+  // slice to the display count.
+  const categories = await listCategories()
   const topLevel = (categories ?? []).filter((c) => !c.parent_category)
 
   if (!topLevel.length) return null
@@ -18,7 +23,7 @@ export default async function RodiCategoryTiles() {
         actionHref="/store"
       />
       <div className="grid grid-cols-3 small:grid-cols-5 large:grid-cols-7 gap-3 mt-4">
-        {topLevel.slice(0, 14).map((cat) => {
+        {topLevel.slice(0, 15).map((cat) => {
           const { emoji, token, desc, image } = getCategoryVisual(
             cat.handle,
             cat.name

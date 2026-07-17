@@ -21,6 +21,7 @@ const EMOJI_BY_KEYWORD: [string, string][] = [
   ["bebé", "🍼"],
   ["electro", "🔌"],
   ["farmacia", "💊"],
+  ["ropa", "👕"],
 ]
 
 export function getCategoryEmoji(name?: string | null): string {
@@ -36,12 +37,12 @@ export function getCategoryEmoji(name?: string | null): string {
  * Per-category emoji + surface color + short tagline, keyed by handle, ported
  * 1:1 from design-reference/ecommerce-test/data.jsx:13-27 (CATEGORIES).
  * Decorative only — intentionally static in the frontend rather than a
- * backend field, since these ~14 values don't need to be editable without a
+ * backend field, since these ~15 values don't need to be editable without a
  * deploy. `token` is a `bg-rm-s-*` Tailwind class (see tailwind.config.js
  * `colors.rm`). `image` points at a curated photo under `public/images/categories/`
  * (sourced from Unsplash, see CREDITS.md in that folder) — `emoji`/`token`
- * stay as the fallback for categories outside this curated set (e.g. demo
- * apparel) and as the loading-state background behind the photo.
+ * stay as the fallback for categories outside this curated set (e.g. their
+ * subcategories) and as the loading-state background behind the photo.
  */
 const CATEGORY_VISUAL_BY_HANDLE: Record<
   string,
@@ -61,6 +62,7 @@ const CATEGORY_VISUAL_BY_HANDLE: Record<
   bebe: { emoji: "🍼", token: "bg-rm-s-pink", desc: "Pañales, fórmula, papillas", image: "/images/categories/bebe.jpg" },
   electrodomesticos: { emoji: "🔌", token: "bg-rm-s-sand", desc: "Para tu cocina y hogar", image: "/images/categories/electrodomesticos.jpg" },
   farmacia: { emoji: "💊", token: "bg-rm-s-mint", desc: "Cuidado y bienestar", image: "/images/categories/farmacia.jpg" },
+  ropa: { emoji: "👕", token: "bg-rm-s-sand", desc: "Moda para toda la familia", image: "/images/categories/ropa.jpg" },
 }
 
 /** Handles of the curated Rodi Mercado categories (see CATEGORY_VISUAL_BY_HANDLE above). */
@@ -77,11 +79,11 @@ export type CategoryVisual = {
 
 /**
  * Resolves emoji + surface color + tagline + photo for a category tile.
- * Looks up by `handle` first (exact match against the Rodi Mercado design
- * categories); falls back to keyword matching on `name` for categories
- * outside that set (e.g. the demo apparel categories still used for QA,
- * which have no curated photo), and finally to a neutral token. `desc`/`image`
- * are only defined for the curated 14 — callers should treat them as optional.
+ * Looks up by `handle` first (exact match against the curated top-level
+ * categories); falls back to keyword matching on `name` for subcategories
+ * (which have no curated photo of their own), and finally to a neutral
+ * token. `desc`/`image` are only defined for the curated top-level set —
+ * callers should treat them as optional.
  */
 export function getCategoryVisual(
   handle?: string | null,

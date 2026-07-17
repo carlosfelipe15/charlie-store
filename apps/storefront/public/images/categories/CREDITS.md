@@ -18,5 +18,7 @@ Todas las fotos son de [Unsplash](https://unsplash.com), bajo la [Unsplash Licen
 | `bebe.jpg` | Bebé | Aditya Saxena | https://unsplash.com/photos/a-box-of-diapers-next-to-a-bottle-of-lotion-BOhe4TSwiaQ |
 | `electrodomesticos.jpg` | Electrodomésticos | Raychan | https://unsplash.com/photos/OxEFLtbPtqs |
 | `farmacia.jpg` | Farmacia | The-Lore | https://unsplash.com/photos/rRBtKW_aw_U |
+| `ropa.jpg` | Ropa | Fujiphilm | https://unsplash.com/photos/assorted-color-clothes-lot-hanging-on-wooden-wall-rack-ojZ4wJNUM5w |
 
 Curadas el 2026-07-12. Si se reemplaza alguna, actualizar esta tabla.
+`ropa.jpg` agregada el 2026-07-15.
