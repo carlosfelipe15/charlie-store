@@ -1,5 +1,5 @@
 import { RodiBtn } from "@modules/common/components/rodi"
-import { RodiIconShield, RodiIconTruck } from "@modules/common/icons/rodi"
+import { RodiIconTruck } from "@modules/common/icons/rodi"
 
 export default function RodiPdpDelivery() {
   return (
@@ -17,15 +17,6 @@ export default function RodiPdpDelivery() {
         <RodiBtn kind="ghost" size="sm" type="button" className="shrink-0">
           Cambiar
         </RodiBtn>
-      </div>
-      <div className="border-t border-rm-line-2 pt-3 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-rm-md bg-rm-s-butter text-rm-yellow-deep grid place-items-center shrink-0">
-          <RodiIconShield size={18} />
-        </div>
-        <div>
-          <p className="text-[13px] font-bold text-rm-ink">Devolución gratuita</p>
-          <p className="text-xs text-rm-ink-3">Según política de la tienda</p>
-        </div>
       </div>
     </div>
   )
