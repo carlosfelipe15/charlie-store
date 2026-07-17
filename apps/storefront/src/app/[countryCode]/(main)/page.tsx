@@ -4,7 +4,8 @@ import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
 import FeaturedProducts from "@modules/home/components/featured-products"
 import Hero from "@modules/home/components/hero"
-import RodiBrandsStrip from "@modules/home/components/rodi-brands-strip"
+// Sección "Marcas que amas" ocultada temporalmente (ver render comentado más abajo).
+// import RodiBrandsStrip from "@modules/home/components/rodi-brands-strip"
 import RodiCategoryTiles from "@modules/home/components/rodi-category-tiles"
 import RodiCuratedRow from "@modules/home/components/rodi-curated-row"
 import RodiFlashSale from "@modules/home/components/rodi-flash-sale"
@@ -63,7 +64,9 @@ export default async function Home(props: {
         categoryHandles={["aseo-personal", "limpieza", "mascotas", "electrodomesticos"]}
         region={region}
       />
-      <RodiBrandsStrip />
+      {/* Sección "Marcas que amas" ocultada temporalmente (a pedido de Carlos, 2026-07-17).
+          No se elimina — el componente RodiBrandsStrip queda disponible para reactivar en el futuro. */}
+      {/* <RodiBrandsStrip /> */}
       <RodiNewsletter />
     </>
   )
