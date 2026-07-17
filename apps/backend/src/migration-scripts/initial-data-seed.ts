@@ -301,23 +301,13 @@ export default async function initial_data_seed({
   ).run({
     input: {
       product_categories: [
-        // Demo apparel categories from the stock Medusa seed. Kept (not
-        // replaced) because they're the only categories with products today —
-        // needed for QA/testing until the real Rodi Mercado catalog is loaded.
+        // Top-level category for the demo apparel from the stock Medusa seed —
+        // the stock Shirts/Sweatshirts/Pants/Merch categories below are now its
+        // subcategories (see the second createProductCategoriesWorkflow call
+        // further down, which needs this category's id as parent_category_id).
         {
-          name: "Shirts",
-          is_active: true,
-        },
-        {
-          name: "Sweatshirts",
-          is_active: true,
-        },
-        {
-          name: "Pants",
-          is_active: true,
-        },
-        {
-          name: "Merch",
+          name: "Ropa",
+          handle: "ropa",
           is_active: true,
         },
         // Rodi Mercado supermarket categories, ported from
@@ -397,13 +387,46 @@ export default async function initial_data_seed({
     },
   });
 
+  const ropaCategory = categoryResult.find((cat) => cat.name === "Ropa")!;
+
+  // Demo apparel categories from the stock Medusa seed, as subcategories of
+  // "Ropa" — needs ropaCategory.id, so this can't be part of the batch above.
+  const { result: apparelCategoryResult } =
+    await createProductCategoriesWorkflow(container).run({
+      input: {
+        product_categories: [
+          {
+            name: "Shirts",
+            is_active: true,
+            parent_category_id: ropaCategory.id,
+          },
+          {
+            name: "Sweatshirts",
+            is_active: true,
+            parent_category_id: ropaCategory.id,
+          },
+          {
+            name: "Pants",
+            is_active: true,
+            parent_category_id: ropaCategory.id,
+          },
+          {
+            name: "Merch",
+            is_active: true,
+            parent_category_id: ropaCategory.id,
+          },
+        ],
+      },
+    });
+
   await createProductsWorkflow(container).run({
     input: {
       products: [
         {
           title: "Medusa T-Shirt",
           category_ids: [
-            categoryResult.find((cat) => cat.name === "Shirts")!.id,
+            ropaCategory.id,
+            apparelCategoryResult.find((cat) => cat.name === "Shirts")!.id,
           ],
           description:
             "Reimagine the feeling of a classic T-shirt. With our cotton T-shirts, everyday essentials no longer have to be ordinary.",
@@ -590,7 +613,8 @@ export default async function initial_data_seed({
         {
           title: "Medusa Sweatshirt",
           category_ids: [
-            categoryResult.find((cat) => cat.name === "Sweatshirts")!.id,
+            ropaCategory.id,
+            apparelCategoryResult.find((cat) => cat.name === "Sweatshirts")!.id,
           ],
           description:
             "Reimagine the feeling of a classic sweatshirt. With our cotton sweatshirt, everyday essentials no longer have to be ordinary.",
@@ -691,7 +715,8 @@ export default async function initial_data_seed({
         {
           title: "Medusa Sweatpants",
           category_ids: [
-            categoryResult.find((cat) => cat.name === "Pants")!.id,
+            ropaCategory.id,
+            apparelCategoryResult.find((cat) => cat.name === "Pants")!.id,
           ],
           description:
             "Reimagine the feeling of classic sweatpants. With our cotton sweatpants, everyday essentials no longer have to be ordinary.",
@@ -792,7 +817,8 @@ export default async function initial_data_seed({
         {
           title: "Medusa Shorts",
           category_ids: [
-            categoryResult.find((cat) => cat.name === "Merch")!.id,
+            ropaCategory.id,
+            apparelCategoryResult.find((cat) => cat.name === "Merch")!.id,
           ],
           description:
             "Reimagine the feeling of classic shorts. With our cotton shorts, everyday essentials no longer have to be ordinary.",
