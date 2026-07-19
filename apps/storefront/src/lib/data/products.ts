@@ -7,6 +7,63 @@ import { SortOptions } from "@modules/store/components/refinement-list/sort-prod
 import { getAuthHeaders, getCacheOptions } from "./cookies"
 import { getRegion, retrieveRegion } from "./regions"
 
+export type ProductFacets = {
+  brand: Record<string, number>
+  tag: Record<string, number>
+  rating: Record<string, number>
+  on_sale: number
+}
+
+const EMPTY_FACETS: ProductFacets = { brand: {}, tag: {}, rating: {}, on_sale: 0 }
+
+/**
+ * Facet counts for the PLP sidebar ("N productos" next to each brand/tag/
+ * rating/on-sale option). Scoped to `categoryId` only — deliberately ignores
+ * any brand/tag/rating/on_sale already selected, so picking one brand
+ * doesn't zero out every other brand's count (see the backend route's
+ * `scopeFilters` comment). Returns `EMPTY_FACETS` (not thrown) on failure so
+ * the sidebar degrades to unlabeled filters instead of erroring the page.
+ */
+export const listProductFacets = async ({
+  categoryId,
+  countryCode,
+}: {
+  categoryId?: string
+  countryCode: string
+}): Promise<ProductFacets> => {
+  const region = await getRegion(countryCode)
+
+  if (!region) {
+    return EMPTY_FACETS
+  }
+
+  const headers = {
+    ...(await getAuthHeaders()),
+  }
+
+  const next = {
+    ...(await getCacheOptions("products")),
+  }
+
+  return sdk.client
+    .fetch<{ facets?: ProductFacets }>(`/store/products-list`, {
+      method: "GET",
+      query: {
+        limit: 1,
+        offset: 0,
+        region_id: region.id,
+        fields: "id",
+        include_facets: true,
+        ...(categoryId ? { category_id: [categoryId] } : {}),
+      },
+      headers,
+      next,
+      cache: "force-cache",
+    })
+    .then(({ facets }) => facets ?? EMPTY_FACETS)
+    .catch(() => EMPTY_FACETS)
+}
+
 export const listProducts = async ({
   pageParam = 1,
   queryParams,

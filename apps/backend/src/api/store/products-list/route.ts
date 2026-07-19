@@ -91,6 +91,80 @@ export const GET = async (req: ProductsRequest, res: MedusaResponse) => {
     delete filters.rating_gte;
     const onSale = filters.on_sale;
     delete filters.on_sale;
+    const includeFacets = filters.include_facets === true;
+    delete filters.include_facets;
+    // Snapshot of the "scope" filters (category, status, sales channel, q) —
+    // everything except the sidebar's own dimensions (brand/tag/rating/on_sale)
+    // — used below to compute facet counts that don't collapse to 0 just
+    // because a filter in the same dimension is already selected.
+    const scopeFilters: Record<string, any> = { ...filters };
+
+    // Facet counts for the sidebar (`?include_facets=true`) — computed once
+    // from `scopeFilters` only (category/status/q), so selecting a brand
+    // doesn't zero out every other brand's count. Same "small catalog, JS
+    // last-resort" justification as the rating_gte/on_sale filters above:
+    // one extra query.graph() call, in-memory tally, no new aggregation
+    // machinery. Costs nothing when the flag isn't set.
+    let facets: Record<string, unknown> | undefined;
+    if (includeFacets) {
+        const [{ data: scopedProducts }, { data: allReviews }] = await Promise.all([
+            query.graph({
+                entity: "product",
+                fields: ["id", "brand.id", "tags.id", "variants.calculated_price.*"],
+                filters: scopeFilters,
+                pagination: { take: 1000, skip: 0 },
+                context,
+            }),
+            query.graph({
+                entity: "review",
+                fields: ["product_id", "rating"],
+                pagination: { take: 10000, skip: 0 },
+            }),
+        ]);
+
+        const scopedIds = new Set((scopedProducts as any[]).map((product) => product.id));
+
+        const ratingTotalsByProduct = new Map<string, { sum: number; count: number }>();
+        for (const review of allReviews as any[]) {
+            if (!scopedIds.has(review.product_id)) {
+                continue;
+            }
+            const current = ratingTotalsByProduct.get(review.product_id) ?? { sum: 0, count: 0 };
+            current.sum += review.rating;
+            current.count += 1;
+            ratingTotalsByProduct.set(review.product_id, current);
+        }
+
+        const brandCounts: Record<string, number> = {};
+        const tagCounts: Record<string, number> = {};
+        let onSaleCount = 0;
+
+        for (const product of scopedProducts as any[]) {
+            if (product.brand?.id) {
+                brandCounts[product.brand.id] = (brandCounts[product.brand.id] ?? 0) + 1;
+            }
+            for (const tag of product.tags ?? []) {
+                tagCounts[tag.id] = (tagCounts[tag.id] ?? 0) + 1;
+            }
+            const isOnSale = (product.variants ?? []).some(
+                (variant: any) =>
+                    variant.calculated_price?.calculated_price?.price_list_type === "sale"
+            );
+            if (isOnSale) {
+                onSaleCount += 1;
+            }
+        }
+
+        const ratingCounts = { 5: 0, 4: 0, 3: 0 };
+        for (const { sum, count } of ratingTotalsByProduct.values()) {
+            const avg = sum / count;
+            if (avg >= 5) ratingCounts[5] += 1;
+            if (avg >= 4) ratingCounts[4] += 1;
+            if (avg >= 3) ratingCounts[3] += 1;
+        }
+
+        facets = { brand: brandCounts, tag: tagCounts, rating: ratingCounts, on_sale: onSaleCount };
+    }
 
     if (isPresent(tagIds)) {
         filters.tags = { id: Array.isArray(tagIds) ? tagIds : [tagIds] };
@@ -163,6 +237,7 @@ export const GET = async (req: ProductsRequest, res: MedusaResponse) => {
                 count: 0,
                 offset: req.queryConfig.pagination?.skip,
                 limit: req.queryConfig.pagination?.take,
+                facets,
             } as any);
         }
 
@@ -201,5 +276,6 @@ export const GET = async (req: ProductsRequest, res: MedusaResponse) => {
         count: metadata?.count,
         offset: metadata?.skip,
         limit: metadata?.take,
+        facets,
     } as any);
 };

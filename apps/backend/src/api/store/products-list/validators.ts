@@ -8,6 +8,10 @@ const OnSaleField = z
     .union([z.literal("true"), z.boolean()])
     .optional()
     .transform((v) => v === true || v === "true");
+const IncludeFacetsField = z
+    .union([z.literal("true"), z.boolean()])
+    .optional()
+    .transform((v) => v === true || v === "true");
 
 /**
  * Core's StoreGetProductsParams ends in `.strict().transform(...)`, so it
@@ -20,7 +24,7 @@ const OnSaleField = z
  */
 export const StoreGetProductsListParams = z.any().transform((raw, ctx) => {
     const input = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
-    const { brand_id, tag_id, rating_gte, on_sale, ...rest } = input;
+    const { brand_id, tag_id, rating_gte, on_sale, include_facets, ...rest } = input;
 
     const brandResult = BrandIdField.safeParse(brand_id);
     if (!brandResult.success) {
@@ -46,6 +50,12 @@ export const StoreGetProductsListParams = z.any().transform((raw, ctx) => {
         return z.NEVER;
     }
 
+    const includeFacetsResult = IncludeFacetsField.safeParse(include_facets);
+    if (!includeFacetsResult.success) {
+        includeFacetsResult.error.issues.forEach((issue) => ctx.addIssue(issue as z.IssueData));
+        return z.NEVER;
+    }
+
     const coreResult = CoreStoreGetProductsParams.safeParse(rest);
     if (!coreResult.success) {
         coreResult.error.issues.forEach((issue) => ctx.addIssue(issue as z.IssueData));
@@ -58,6 +68,7 @@ export const StoreGetProductsListParams = z.any().transform((raw, ctx) => {
         tag_id: tagResult.data,
         rating_gte: ratingResult.data,
         on_sale: onSaleResult.data,
+        include_facets: includeFacetsResult.data,
     };
 });
 

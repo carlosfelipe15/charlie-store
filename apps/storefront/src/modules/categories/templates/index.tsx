@@ -6,7 +6,7 @@ import { getCategoryVisual } from "@lib/util/category-emoji"
 import { listBrands } from "@lib/data/brands"
 import { listTags } from "@lib/data/tags"
 import { listCategories } from "@lib/data/categories"
-import { listProducts } from "@lib/data/products"
+import { listProductFacets, listProducts } from "@lib/data/products"
 import SkeletonProductGrid from "@modules/skeletons/templates/skeleton-product-grid"
 import RodiCategoryChips from "@modules/store/components/rodi-category-chips"
 import RodiPlpFilters from "@modules/store/components/rodi-plp-filters"
@@ -67,7 +67,7 @@ export default async function CategoryTemplate({
   // we just traversed, so it silently comes back empty.)
   const parentCategory = category.parent_category
 
-  const [brands, tags, productCountResult, siblingCategories] = await Promise.all([
+  const [brands, tags, productCountResult, siblingCategories, facets] = await Promise.all([
     listBrands(),
     listTags(),
     listProducts({ queryParams: countQueryParams, countryCode }),
@@ -77,6 +77,7 @@ export default async function CategoryTemplate({
           fields: "id,name,handle",
         })
       : Promise.resolve(null),
+    listProductFacets({ categoryId: category.id, countryCode }),
   ])
 
   const productCount = productCountResult.response.count
@@ -118,6 +119,7 @@ export default async function CategoryTemplate({
           sortBy={sort}
           brands={brands}
           tags={tags}
+          facets={facets}
           data-testid="sort-by-container"
         />
         <div className="w-full min-w-0 flex-1">

@@ -2,34 +2,31 @@
 
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import SortProducts from "@modules/store/components/refinement-list/sort-products"
-import FilterRadioGroup from "@modules/common/components/filter-radio-group"
+import { RodiStars } from "@modules/common/components/rodi"
 import { StoreBrand } from "@lib/data/brands"
 import { StoreTag } from "@lib/data/tags"
+import { ProductFacets } from "@lib/data/products"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useCallback } from "react"
+
+import RodiFilterGroup from "./filter-group"
+import RodiFilterRow from "./filter-row"
 
 type RodiPlpFiltersProps = {
   sortBy: SortOptions
   brands: StoreBrand[]
   tags: StoreTag[]
+  facets?: ProductFacets
   "data-testid"?: string
 }
 
-// "all" is a DOM-only sentinel — FilterRadioGroup uses each option's value as
-// the hidden radio's `id`/label `htmlFor`, and an empty id is invalid HTML
-// (label[for=""] can't associate with anything, so clicking "Todas" silently
-// no-ops). Translated back to "" when read from/written to the URL below.
-const ratingOptions = [
-  { value: "all", label: "Todas" },
-  { value: "5", label: "5 estrellas" },
-  { value: "4", label: "4 estrellas y más" },
-  { value: "3", label: "3 estrellas y más" },
-]
+const ratingTiers = [5, 4, 3] as const
 
 export default function RodiPlpFilters({
   sortBy,
   brands,
   tags,
+  facets,
   "data-testid": dataTestId,
 }: RodiPlpFiltersProps) {
   const router = useRouter()
@@ -102,6 +99,13 @@ export default function RodiPlpFilters({
   const ratingGte = searchParams.get("rating_gte") ?? ""
   const onSale = searchParams.get("on_sale") === "true"
 
+  const toggleRatingParam = useCallback(
+    (value: string) => {
+      setOrDeleteParam("rating_gte", ratingGte === value ? "" : value)
+    },
+    [ratingGte, setOrDeleteParam]
+  )
+
   const clearFilters = useCallback(() => {
     const params = new URLSearchParams(searchParams)
     params.delete("brand_id")
@@ -141,79 +145,75 @@ export default function RodiPlpFilters({
         </div>
         <SortProducts sortBy={sortBy} setQueryParams={setQueryParams} />
         {brands.length > 0 && (
-          <div className="mt-5 pt-4 border-t border-rm-line-2">
-            <p className="text-xs font-bold uppercase tracking-wide text-rm-ink-3 mb-2.5">
-              Marca
-            </p>
-            <ul className="flex flex-col gap-2" data-testid="brand-filter-list">
+          <RodiFilterGroup title="Marca">
+            <ul className="flex flex-col" data-testid="brand-filter-list">
               {brands.map((brand) => (
-                <li key={brand.id}>
-                  <label className="flex items-center gap-2 text-sm text-rm-ink-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedBrandIds.includes(brand.id)}
-                      onChange={() =>
-                        toggleMultiValueParam("brand_id", selectedBrandIds, brand.id)
-                      }
-                      className="w-4 h-4 rounded border-rm-line accent-rm-red"
-                      data-testid={`brand-filter-${brand.id}`}
-                    />
-                    {brand.name}
-                  </label>
-                </li>
+                <RodiFilterRow
+                  key={brand.id}
+                  id={`brand-${brand.id}`}
+                  checked={selectedBrandIds.includes(brand.id)}
+                  onChange={() =>
+                    toggleMultiValueParam("brand_id", selectedBrandIds, brand.id)
+                  }
+                  count={facets ? facets.brand[brand.id] ?? 0 : undefined}
+                  data-testid={`brand-filter-${brand.id}`}
+                >
+                  {brand.name}
+                </RodiFilterRow>
               ))}
             </ul>
-          </div>
+          </RodiFilterGroup>
         )}
-        {tags.length > 0 && (
-          <div className="mt-5 pt-4 border-t border-rm-line-2">
-            <p className="text-xs font-bold uppercase tracking-wide text-rm-ink-3 mb-2.5">
-              Atributos
-            </p>
-            <ul className="flex flex-col gap-2" data-testid="tag-filter-list">
-              {tags.map((tag) => (
-                <li key={tag.id}>
-                  <label className="flex items-center gap-2 text-sm text-rm-ink-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedTagIds.includes(tag.id)}
-                      onChange={() => toggleMultiValueParam("tag_id", selectedTagIds, tag.id)}
-                      className="w-4 h-4 rounded border-rm-line accent-rm-red"
-                      data-testid={`tag-filter-${tag.id}`}
-                    />
-                    {tag.value}
-                  </label>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        <div className="mt-5 pt-4 border-t border-rm-line-2">
-          <FilterRadioGroup
-            title="Calificación"
-            items={ratingOptions}
-            value={ratingGte || "all"}
-            handleChange={(value) =>
-              setOrDeleteParam("rating_gte", value === "all" ? "" : value)
-            }
-            data-testid="rating-filter"
-          />
-        </div>
-        <div className="mt-5 pt-4 border-t border-rm-line-2">
-          <p className="text-xs font-bold uppercase tracking-wide text-rm-ink-3 mb-2.5">
-            Promociones
-          </p>
-          <label className="flex items-center gap-2 text-sm text-rm-ink-2 cursor-pointer">
-            <input
-              type="checkbox"
+        <RodiFilterGroup title="Promociones">
+          <ul className="flex flex-col">
+            <RodiFilterRow
+              id="on-sale-filter"
               checked={onSale}
               onChange={() => toggleBooleanParam("on_sale")}
-              className="w-4 h-4 rounded border-rm-line accent-rm-red"
+              count={facets?.on_sale}
               data-testid="on-sale-filter"
-            />
-            En oferta
-          </label>
-        </div>
+            >
+              En oferta
+            </RodiFilterRow>
+          </ul>
+        </RodiFilterGroup>
+        {tags.length > 0 && (
+          <RodiFilterGroup title="Atributos">
+            <ul className="flex flex-col" data-testid="tag-filter-list">
+              {tags.map((tag) => (
+                <RodiFilterRow
+                  key={tag.id}
+                  id={`tag-${tag.id}`}
+                  checked={selectedTagIds.includes(tag.id)}
+                  onChange={() => toggleMultiValueParam("tag_id", selectedTagIds, tag.id)}
+                  count={facets ? facets.tag[tag.id] ?? 0 : undefined}
+                  data-testid={`tag-filter-${tag.id}`}
+                >
+                  {tag.value}
+                </RodiFilterRow>
+              ))}
+            </ul>
+          </RodiFilterGroup>
+        )}
+        <RodiFilterGroup title="Calificación" last>
+          <ul className="flex flex-col" data-testid="rating-filter">
+            {ratingTiers.map((tier) => (
+              <RodiFilterRow
+                key={tier}
+                id={`rating-${tier}`}
+                checked={ratingGte === String(tier)}
+                onChange={() => toggleRatingParam(String(tier))}
+                count={facets?.rating[String(tier)]}
+                data-testid={`rating-filter-${tier}`}
+              >
+                <RodiStars value={tier} size={12} />
+                {tier < 5 && (
+                  <span className="text-rm-ink-2 font-normal">y más</span>
+                )}
+              </RodiFilterRow>
+            ))}
+          </ul>
+        </RodiFilterGroup>
         <p className="text-xs text-rm-ink-3 mt-4 leading-relaxed">
           Filtro de precio en una próxima iteración.
         </p>

@@ -80,7 +80,7 @@ export default function RodiActiveFilterChips({ brands, tags }: RodiActiveFilter
       ? [
           {
             key: "rating",
-            label: `${ratingGte}★ y más`,
+            label: ratingGte === "5" ? "5★" : `${ratingGte}★ y más`,
             onRemove: () => removeParam("rating_gte"),
           },
         ]
