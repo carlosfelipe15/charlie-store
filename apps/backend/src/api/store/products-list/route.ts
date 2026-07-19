@@ -7,6 +7,10 @@ import { StoreRequestWithContext } from "@medusajs/medusa/api/store/types";
 
 type ProductsRequest = StoreRequestWithContext<HttpTypes.StoreProductListParams>;
 
+function intersectIdArrays(idArrays: string[][]): string[] {
+    return idArrays.reduce((acc, ids) => acc.filter((id) => ids.includes(id)));
+}
+
 /**
  * `GET /store/products-list` — a parallel endpoint to core's `/store/products`,
  * NOT an override. An override was tried first and abandoned: Medusa's core
@@ -44,6 +48,20 @@ type ProductsRequest = StoreRequestWithContext<HttpTypes.StoreProductListParams>
  * default sidesteps both: exact counts always, and category filtering never
  * touches the Index Engine's broken dispatch in the first place. See
  * FASE-10 for the full history.
+ *
+ * `tag_id` (Atributos filter) doesn't need any of this: `product_tag` is a
+ * same-module relation on `product` (unlike `brand`, a separate linked
+ * module), so it's just a `query.graph()` filter on `filters.tags`, added
+ * directly below — no Index Engine resolution step needed.
+ *
+ * `rating_gte` (Calificación) and `on_sale` (Promociones) have no native
+ * Medusa filter/aggregation at all — no avg-by-product query, no
+ * belongs-to-active-price-list filter. Both are resolved the same way as
+ * `brand_id`: a light query, reduced/filtered in JS, then intersected into
+ * `filters.id`. This is the "last resort" JS-filter pattern, justified here
+ * only because the catalog is small (order of tens of products, ~130
+ * reviews) — see `.context/plans` FASE-10 doc and this feature's plan for
+ * why it doesn't scale-generalize past this catalog size.
  */
 export const GET = async (req: ProductsRequest, res: MedusaResponse) => {
     const query = req.scope.resolve(ContainerRegistrationKeys.QUERY);
@@ -67,6 +85,18 @@ export const GET = async (req: ProductsRequest, res: MedusaResponse) => {
     const filters: Record<string, any> = { ...req.filterableFields };
     const brandIds = filters.brand_id;
     delete filters.brand_id;
+    const tagIds = filters.tag_id;
+    delete filters.tag_id;
+    const ratingGte = filters.rating_gte;
+    delete filters.rating_gte;
+    const onSale = filters.on_sale;
+    delete filters.on_sale;
+
+    if (isPresent(tagIds)) {
+        filters.tags = { id: Array.isArray(tagIds) ? tagIds : [tagIds] };
+    }
+
+    const matchedIdSets: string[][] = [];
 
     if (isPresent(brandIds)) {
         const { data: brandMatches } = await query.index({
@@ -79,7 +109,53 @@ export const GET = async (req: ProductsRequest, res: MedusaResponse) => {
             pagination: { take: 1000, skip: 0 },
         });
 
-        const matchedIds: string[] = brandMatches.map((product: any) => product.id);
+        matchedIdSets.push(brandMatches.map((product: any) => product.id));
+    }
+
+    if (isPresent(ratingGte)) {
+        const { data: reviews } = await query.graph({
+            entity: "review",
+            fields: ["product_id", "rating"],
+            pagination: { take: 10000, skip: 0 },
+        });
+
+        const totalsByProduct = new Map<string, { sum: number; count: number }>();
+        for (const review of reviews as any[]) {
+            const current = totalsByProduct.get(review.product_id) ?? { sum: 0, count: 0 };
+            current.sum += review.rating;
+            current.count += 1;
+            totalsByProduct.set(review.product_id, current);
+        }
+
+        const matchedIds = Array.from(totalsByProduct.entries())
+            .filter(([, { sum, count }]) => sum / count >= ratingGte)
+            .map(([productId]) => productId);
+
+        matchedIdSets.push(matchedIds);
+    }
+
+    if (onSale === true) {
+        const { data: allProducts } = await query.graph({
+            entity: "product",
+            fields: ["id", "variants.calculated_price.*"],
+            pagination: { take: 1000, skip: 0 },
+            context,
+        });
+
+        const matchedIds = (allProducts as any[])
+            .filter((product) =>
+                (product.variants ?? []).some(
+                    (variant: any) =>
+                        variant.calculated_price?.calculated_price?.price_list_type === "sale"
+                )
+            )
+            .map((product) => product.id);
+
+        matchedIdSets.push(matchedIds);
+    }
+
+    if (matchedIdSets.length > 0) {
+        const matchedIds = intersectIdArrays(matchedIdSets);
 
         if (matchedIds.length === 0) {
             return res.json({

@@ -1,6 +1,8 @@
 import { listProductsWithSort } from "@lib/data/products"
 import { getFavoritedProductIds } from "@lib/data/favorites"
 import { getRegion } from "@lib/data/regions"
+import { StoreBrand } from "@lib/data/brands"
+import { StoreTag } from "@lib/data/tags"
 import ProductPreview from "@modules/products/components/product-preview"
 import { RodiPagination } from "@modules/store/components/rodi-pagination"
 import RodiPlpToolbar from "@modules/store/components/rodi-plp-toolbar"
@@ -15,6 +17,9 @@ type PaginatedProductsParams = {
   category_id?: string[]
   id?: string[]
   brand_id?: string[]
+  tag_id?: string[]
+  rating_gte?: number
+  on_sale?: boolean
   order?: string
 }
 
@@ -24,18 +29,28 @@ export default async function PaginatedProducts({
   collectionId,
   categoryId,
   brandId,
+  tagId,
+  ratingGte,
+  onSale,
   productsIds,
   query,
   countryCode,
+  brands = [],
+  tags = [],
 }: {
   sortBy?: SortOptions
   page: number
   collectionId?: string
   categoryId?: string
   brandId?: string[]
+  tagId?: string[]
+  ratingGte?: string
+  onSale?: boolean
   productsIds?: string[]
   query?: string
   countryCode: string
+  brands?: StoreBrand[]
+  tags?: StoreTag[]
 }) {
   const queryParams: PaginatedProductsParams = {
     limit: 12,
@@ -55,6 +70,18 @@ export default async function PaginatedProducts({
 
   if (brandId?.length) {
     queryParams["brand_id"] = brandId
+  }
+
+  if (tagId?.length) {
+    queryParams["tag_id"] = tagId
+  }
+
+  if (ratingGte) {
+    queryParams["rating_gte"] = parseInt(ratingGte)
+  }
+
+  if (onSale) {
+    queryParams["on_sale"] = true
   }
 
   if (productsIds) {
@@ -93,6 +120,8 @@ export default async function PaginatedProducts({
         sortBy={sortBy ?? "created_at"}
         productCount={count}
         title={query?.trim() ? "Todos los resultados" : undefined}
+        brands={brands}
+        tags={tags}
       />
       <ul
         className="grid grid-cols-2 w-full small:grid-cols-3 medium:grid-cols-4 xl:grid-cols-5 gap-3.5 gap-y-6"

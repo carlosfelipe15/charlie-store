@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 
 import { listBrands } from "@lib/data/brands"
+import { listTags } from "@lib/data/tags"
 import SkeletonProductGrid from "@modules/skeletons/templates/skeleton-product-grid"
 import RodiPlpFilters from "@modules/store/components/rodi-plp-filters"
 import RodiPlpHero from "@modules/store/components/rodi-plp-hero"
@@ -14,12 +15,18 @@ const StoreTemplate = async ({
   page,
   query,
   brandId,
+  tagId,
+  ratingGte,
+  onSale,
   countryCode,
 }: {
   sortBy?: SortOptions
   page?: string
   query?: string
   brandId?: string[]
+  tagId?: string[]
+  ratingGte?: string
+  onSale?: boolean
   countryCode: string
 }) => {
   const pageNumber = page ? parseInt(page) : 1
@@ -27,7 +34,9 @@ const StoreTemplate = async ({
   const searchQuery = query?.trim()
   const isSearch = Boolean(searchQuery)
 
-  const brands = isSearch ? [] : await listBrands()
+  const [brands, tags] = isSearch
+    ? [[], []]
+    : await Promise.all([listBrands(), listTags()])
 
   return (
     <div className="py-6 content-container" data-testid="category-container">
@@ -45,6 +54,7 @@ const StoreTemplate = async ({
           <RodiPlpFilters
             sortBy={sort}
             brands={brands}
+            tags={tags}
             data-testid="sort-by-container"
           />
         )}
@@ -55,7 +65,12 @@ const StoreTemplate = async ({
               page={pageNumber}
               query={searchQuery}
               brandId={brandId}
+              tagId={tagId}
+              ratingGte={ratingGte}
+              onSale={onSale}
               countryCode={countryCode}
+              brands={brands}
+              tags={tags}
             />
           </Suspense>
         </div>

@@ -17,7 +17,7 @@ import {
     setTaxContext,
 } from "@medusajs/medusa/api/utils/middlewares/index";
 import { listProductQueryConfig } from "@medusajs/medusa/api/store/products/query-config";
-import { StoreGetProductsWithBrandParams } from "./validators";
+import { StoreGetProductsListParams } from "./validators";
 
 /**
  * route.ts always fetches via query.graph() (see its header comment for
@@ -63,7 +63,7 @@ export const storeProductsWithBrandMiddlewares: MiddlewareRoute[] = [
             authenticate("customer", ["session", "bearer"], {
                 allowUnauthenticated: true,
             }),
-            validateAndTransformQuery(StoreGetProductsWithBrandParams, listProductQueryConfig),
+            validateAndTransformQuery(StoreGetProductsListParams, listProductQueryConfig),
             filterByValidSalesChannels(),
             applySalesChannelLinkFilter,
             applyDefaultFilters({

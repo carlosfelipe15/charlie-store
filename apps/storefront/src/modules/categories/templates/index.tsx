@@ -4,6 +4,7 @@ import { Suspense } from "react"
 import { HttpTypes } from "@medusajs/types"
 import { getCategoryVisual } from "@lib/util/category-emoji"
 import { listBrands } from "@lib/data/brands"
+import { listTags } from "@lib/data/tags"
 import { listCategories } from "@lib/data/categories"
 import { listProducts } from "@lib/data/products"
 import SkeletonProductGrid from "@modules/skeletons/templates/skeleton-product-grid"
@@ -18,12 +19,18 @@ export default async function CategoryTemplate({
   sortBy,
   page,
   brandId,
+  tagId,
+  ratingGte,
+  onSale,
   countryCode,
 }: {
   category: HttpTypes.StoreProductCategory
   sortBy?: SortOptions
   page?: string
   brandId?: string[]
+  tagId?: string[]
+  ratingGte?: string
+  onSale?: boolean
   countryCode: string
 }) {
   const pageNumber = page ? parseInt(page) : 1
@@ -40,6 +47,18 @@ export default async function CategoryTemplate({
     countQueryParams.brand_id = brandId
   }
 
+  if (tagId?.length) {
+    countQueryParams.tag_id = tagId
+  }
+
+  if (ratingGte) {
+    countQueryParams.rating_gte = parseInt(ratingGte)
+  }
+
+  if (onSale) {
+    countQueryParams.on_sale = true
+  }
+
   // A subcategory has no children of its own, so basing the chip row on
   // `category.category_children` makes every sibling disappear as soon as
   // you land on one — fetch the parent's children (siblings) separately
@@ -48,8 +67,9 @@ export default async function CategoryTemplate({
   // we just traversed, so it silently comes back empty.)
   const parentCategory = category.parent_category
 
-  const [brands, productCountResult, siblingCategories] = await Promise.all([
+  const [brands, tags, productCountResult, siblingCategories] = await Promise.all([
     listBrands(),
+    listTags(),
     listProducts({ queryParams: countQueryParams, countryCode }),
     parentCategory
       ? listCategories({
@@ -97,6 +117,7 @@ export default async function CategoryTemplate({
         <RodiPlpFilters
           sortBy={sort}
           brands={brands}
+          tags={tags}
           data-testid="sort-by-container"
         />
         <div className="w-full min-w-0 flex-1">
@@ -110,7 +131,12 @@ export default async function CategoryTemplate({
               page={pageNumber}
               categoryId={category.id}
               brandId={brandId}
+              tagId={tagId}
+              ratingGte={ratingGte}
+              onSale={onSale}
               countryCode={countryCode}
+              brands={brands}
+              tags={tags}
             />
           </Suspense>
         </div>

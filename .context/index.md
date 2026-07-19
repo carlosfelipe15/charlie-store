@@ -2,11 +2,11 @@
 
 Punto de entrada a `.context/`. Actualizar cada vez que cambie la fase activa o se shippee un feature.
 
-**Última actualización:** 2026-07-14 (rendimiento de navegación del storefront: N+1 de cart-line en la grilla, `*products` en el header, over-fetch del listado — ver `backlog.md` `[PERF/STOREFRONT-NAV]`)
+**Última actualización:** 2026-07-18 (Fase 11 — filtros de PLP: Atributos, Calificación, Promociones y chips de filtros activos, ver tabla abajo)
 
 ## Fase actual
 
-Ninguna fase formal en curso — las 10 fases planificadas están cerradas (8 en `plans/2026-07-07/`, 2 en `plans/2026-07-08/`). Trabajo actual: iteración sobre `backlog.md` y extensiones puntuales a features ya shippeadas (ver `features/`).
+Ninguna fase formal en curso — las 11 fases planificadas están cerradas (8 en `plans/2026-07-07/`, 2 en `plans/2026-07-08/`, 1 en `plans/2026-07-18/`). Trabajo actual: iteración sobre `backlog.md` y extensiones puntuales a features ya shippeadas (ver `features/`).
 
 ## Fases completadas
 
@@ -22,6 +22,7 @@ Ninguna fase formal en curso — las 10 fases planificadas están cerradas (8 en
 | 8 — Endurecimiento y deuda técnica | [`plans/2026-07-07/FASE-8-endurecimiento-deuda-tecnica.md`](./plans/2026-07-07/FASE-8-endurecimiento-deuda-tecnica.md) | Cuenta (password/email), cantidad de carrito real, error boundaries, limpieza de stubs |
 | 9 — Favoritos | [`plans/2026-07-08/FASE-9-favoritos.md`](./plans/2026-07-08/FASE-9-favoritos.md) | Módulo `favorite` completo (backend + toggle en PLP/PDP/cuenta), ver [`docs/custom-features/favorites.md`](../docs/custom-features/favorites.md) |
 | 10 — Filtro de marca en PLP | [`plans/2026-07-08/FASE-10-filtro-marca-index-module.md`](./plans/2026-07-08/FASE-10-filtro-marca-index-module.md) | Index Module (`@medusajs/index`), endpoint `/store/products-list`, checkboxes de marca en `rodi-plp-filters` — incluye un bug de Medusa 2.15.2 encontrado y evitado (ver doc) |
+| 11 — Atributos/Calificación/Promociones en PLP | [`plans/2026-07-18/FASE-11-plp-atributos-calificacion-promociones.md`](./plans/2026-07-18/FASE-11-plp-atributos-calificacion-promociones.md) | Extiende `/store/products-list` (Fase 10) con `tag_id`/`rating_gte`/`on_sale` combinables por intersección de ids; nuevo script `seed-product-attributes.ts`; fila de chips de filtros activos (`rodi-active-filter-chips`); Precio, 2x1/Combos y "Más vendidos" quedan fuera, este último documentado como `[FEATURE/PLP-MAS-VENDIDOS]` |
 
 ## Features con changelog propio
 
@@ -36,6 +37,8 @@ Cambios a una feature **posteriores** a su fase inicial se registran aquí en ve
 ## Estado del backlog
 
 Ver [`backlog.md`](./backlog.md) para el detalle completo. Resumen al 2026-07-09: 0 bugs activos (los 4 detectados en la auditoría del 2026-07-08 quedaron resueltos), 6 resueltos recientemente (warning de key, selector de región, bloque de dirección, newsletter, secciones de home, y el feature completo de favoritos), 6 implementaciones pendientes (filtros de PLP por precio/promociones/atributos/calificación — marca ya resuelta; combos de productos — plan guardado, sin ejecutar; tabs de PDP + feature de Preguntas; elementos menores de PDP; bottom tab bar mobile — requiere decisión de producto; mejoras de búsqueda), 5 ítems de deuda técnica menor (duplicados de reseñas sin constraint, componente sin uso, swatches de color, badges de pago, contenido hardcodeado del mega menú).
+
+**Actualización 2026-07-18 (Fase 11):** dentro de `[FEATURE/PLP-FILTROS]`, Atributos/Calificación/Promociones("En oferta")/chips de filtros activos quedan resueltos — solo Precio y 2x1/Combos (bloqueado por `[FEATURE/COMBOS]`) siguen pendientes de ese ítem. Se agregó un ítem nuevo, `[FEATURE/PLP-MAS-VENDIDOS]`, para el orden por ventas que se evaluó y se decidió no construir en esta pasada. Ver `backlog.md` y `plans/2026-07-18/FASE-11-plp-atributos-calificacion-promociones.md` para el detalle.
 
 ## Pendientes que cruzan sesiones
 

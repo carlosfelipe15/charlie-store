@@ -14,6 +14,9 @@ type Params = {
     page?: string
     q?: string
     brand_id?: string
+    tag_id?: string
+    rating_gte?: string
+    on_sale?: string
   }>
   params: Promise<{
     countryCode: string
@@ -23,7 +26,7 @@ type Params = {
 export default async function StorePage(props: Params) {
   const params = await props.params;
   const searchParams = await props.searchParams;
-  const { sortBy, page, q, brand_id } = searchParams
+  const { sortBy, page, q, brand_id, tag_id, rating_gte, on_sale } = searchParams
 
   return (
     <StoreTemplate
@@ -31,6 +34,9 @@ export default async function StorePage(props: Params) {
       page={page}
       query={q}
       brandId={brand_id ? brand_id.split(",").filter(Boolean) : undefined}
+      tagId={tag_id ? tag_id.split(",").filter(Boolean) : undefined}
+      ratingGte={rating_gte}
+      onSale={on_sale === "true"}
       countryCode={params.countryCode}
     />
   )
