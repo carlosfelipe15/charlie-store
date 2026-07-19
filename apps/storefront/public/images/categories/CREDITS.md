@@ -19,6 +19,8 @@ Todas las fotos son de [Unsplash](https://unsplash.com), bajo la [Unsplash Licen
 | `electrodomesticos.jpg` | Electrodomésticos | Raychan | https://unsplash.com/photos/OxEFLtbPtqs |
 | `farmacia.jpg` | Farmacia | The-Lore | https://unsplash.com/photos/rRBtKW_aw_U |
 | `ropa.jpg` | Ropa | Fujiphilm | https://unsplash.com/photos/assorted-color-clothes-lot-hanging-on-wooden-wall-rack-ojZ4wJNUM5w |
+| `todos-los-productos.jpg` | Todos los productos (hero de `/store`) | Jack Lee | https://unsplash.com/photos/IH65r4HEQWQ |
 
 Curadas el 2026-07-12. Si se reemplaza alguna, actualizar esta tabla.
 `ropa.jpg` agregada el 2026-07-15.
+`todos-los-productos.jpg` agregada el 2026-07-19 — reemplaza el emoji 🛒 que usaba el hero de "Todos los productos" en `/store`, para consistencia con el resto de categorías (no es un category handle real, se referencia directo en `store/templates/index.tsx`, no en `category-emoji.ts`).
