@@ -38,7 +38,7 @@ export default function RodiMegaMenu({
 
   return (
     <div
-      className="absolute left-6 right-6 -mt-1 bg-rm-paper border border-rm-line rounded-rm-lg shadow-[0_24px_60px_rgba(26,23,20,0.16)] z-40 hidden small:grid grid-cols-[240px_1fr_280px]"
+      className="absolute left-6 -mt-1 w-[900px] bg-rm-paper border border-rm-line rounded-rm-lg shadow-[0_24px_60px_rgba(26,23,20,0.16)] z-40 hidden small:grid grid-cols-[220px_1fr_260px]"
       onMouseLeave={onClose}
     >
       <div className="p-3 border-r border-rm-line-2 max-h-[420px] overflow-y-auto">
