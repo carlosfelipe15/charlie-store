@@ -1,18 +1,12 @@
 "use client"
 
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
-import { RodiIconChevron, RodiIconSort } from "@modules/common/icons/rodi"
 import RodiActiveFilterChips from "@modules/store/components/rodi-active-filter-chips"
+import RodiSortSelect from "./rodi-sort-select"
 import { StoreBrand } from "@lib/data/brands"
 import { StoreTag } from "@lib/data/tags"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useCallback } from "react"
-
-const sortLabels: Record<SortOptions, string> = {
-  created_at: "Más recientes",
-  price_asc: "Menor precio",
-  price_desc: "Mayor precio",
-}
 
 type RodiPlpToolbarProps = {
   sortBy: SortOptions
@@ -60,27 +54,7 @@ export default function RodiPlpToolbar({
         </div>
         <RodiActiveFilterChips brands={brands} tags={tags} />
       </div>
-      <div className="relative">
-        <label className="sr-only" htmlFor="plp-sort">
-          Ordenar
-        </label>
-        <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-rm-line bg-rm-paper text-[13px] font-semibold text-rm-ink">
-          <RodiIconSort size={14} />
-          <select
-            id="plp-sort"
-            value={sortBy}
-            onChange={(e) => setSort(e.target.value as SortOptions)}
-            className="bg-transparent border-0 outline-none cursor-pointer pr-6 appearance-none"
-          >
-            {(Object.keys(sortLabels) as SortOptions[]).map((key) => (
-              <option key={key} value={key}>
-                {sortLabels[key]}
-              </option>
-            ))}
-          </select>
-          <RodiIconChevron size={12} className="pointer-events-none -ml-4" />
-        </div>
-      </div>
+      <RodiSortSelect value={sortBy} onChange={setSort} />
     </div>
   )
 }
