@@ -12,6 +12,8 @@ Monorepo de ecommerce DTC: **Medusa v2** (backend + admin) y **Next.js** (storef
 | [storefront.md](./storefront.md) | Desarrolladores / IA | Estructura de `apps/storefront` |
 | [custom-features/brands.md](./custom-features/brands.md) | Todos | Módulo Brands (feature custom) |
 | [custom-features/reviews.md](./custom-features/reviews.md) | Todos | Módulo Reviews (feature custom) |
+| [custom-features/favorites.md](./custom-features/favorites.md) | Todos | Módulo Favorites (feature custom) |
+| [custom-features/zones.md](./custom-features/zones.md) | Todos | Módulo Zone — zonas de entrega Provincia/Municipio (feature custom) |
 
 Estos documentos son **referencia viva**: deben reflejar el estado actual del código. Si algo aquí contradice lo que ves en `apps/`, confía en el código y actualiza el doc.
 

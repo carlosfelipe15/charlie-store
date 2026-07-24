@@ -128,6 +128,18 @@ Detalle completo: [docs/custom-features/reviews.md](docs/custom-features/reviews
 
 Detalle completo: [docs/custom-features/favorites.md](docs/custom-features/favorites.md).
 
+**Zones** (zonas de entrega, Provincia → Municipio) — geografía de Cuba (15 provincias + "Isla de la Juventud", 168 municipios), sin admin UI de CRUD (datos fijos, sembrados una vez):
+- Módulo: `apps/backend/src/modules/zone/` (`Province`/`Municipality`, primera relación intra-módulo del repo, `Province.hasMany(Municipality)`)
+- Link producto↔municipio: `apps/backend/src/links/product-municipality.ts` (**primer link N–M** del repo, `isList: true` en ambos lados; deliberadamente no `filterable` — el filtro de zona resuelve con `query.graph()` + JS, no con el Index Engine, así que no hay reindex atado a datos de zona)
+- Workflows: `create-zones.ts` (bulk-create, solo usado por el seed), `set-product-zones.ts` (reconciliación completa de links — `municipality_ids: []` limpia todo, producto vuelve a estar disponible en toda Cuba)
+- API store: `GET /store/zones` (público), `POST /store/zones/eligibility-check` (público, chequea qué productos de un set de ids no están disponibles en una zona), filtro `zone_id` en `GET /store/products-list`
+- API admin: `GET /admin/zones` (mirror de `/store/zones`, archivo separado por el mismo motivo que `/admin/brands` vs `/store/brands`), `GET/POST /admin/products/:id/zones`
+- Admin: widget `product.details.after` en el detalle de producto (`admin/widgets/product-zones.tsx`) para asignar municipios — sin CRUD de Provincia/Municipio
+- Storefront: selector "Entregar en" (cookie `_charlie_zone`, reemplaza al `CountrySelect` de país único) en el header/side-menu (`rodi-zone-picker`), filtrado de catálogo por `zone_id`, y un aviso blando (`ZoneConflictDialog`, nunca bloqueo duro) que limpia del carrito los productos no disponibles al cambiar de zona — tanto desde el picker como desde el checkout (`setAddresses` en `lib/data/cart.ts`, que también sincroniza la cookie con la dirección de envío guardada)
+- Disponibilidad **permisiva**: producto sin municipios linkeados = disponible en todas partes
+
+Detalle completo: [docs/custom-features/zones.md](docs/custom-features/zones.md).
+
 **Nota**: al registrar un módulo nuevo en `medusa-config.ts` o crear/editar un archivo en `src/links/`, reiniciar `medusa develop` completo — no recarga en caliente.
 
 ## Dónde colocar código nuevo
