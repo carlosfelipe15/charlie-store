@@ -2,21 +2,22 @@
 
 import { Plus } from "@medusajs/icons"
 import { Button, Heading } from "@modules/common/components/ui"
-import { useActionState, useEffect, useState } from "react"
+import { useActionState, useEffect, useMemo, useState } from "react"
 
 import { addCustomerAddress } from "@lib/data/customer"
+import type { ZoneProvince } from "@lib/data/zones"
 import useToggleState from "@lib/hooks/use-toggle-state"
 import { HttpTypes } from "@medusajs/types"
-import CountrySelect from "@modules/checkout/components/country-select"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
 import Input from "@modules/common/components/input"
 import Modal from "@modules/common/components/modal"
+import NativeSelect from "@modules/common/components/native-select"
 
 const AddAddress = ({
-  region,
+  zones,
   addresses,
 }: {
-  region: HttpTypes.StoreRegion
+  zones: ZoneProvince[]
   addresses: HttpTypes.StoreCustomerAddress[]
 }) => {
   const [successState, setSuccessState] = useState(false)
@@ -27,8 +28,18 @@ const AddAddress = ({
     error: null,
   } as { success: boolean; error: string | null })
 
+  const [provinceName, setProvinceName] = useState("")
+  const [municipalityName, setMunicipalityName] = useState("")
+
+  const municipalities = useMemo(
+    () => zones.find((p) => p.name === provinceName)?.municipalities ?? [],
+    [zones, provinceName]
+  )
+
   const close = () => {
     setSuccessState(false)
+    setProvinceName("")
+    setMunicipalityName("")
     closeModal()
   }
 
@@ -60,7 +71,10 @@ const AddAddress = ({
         <Modal.Title>
           <Heading className="mb-2">Agregar dirección</Heading>
         </Modal.Title>
-        <form action={formAction}>
+        <form
+          action={formAction}
+          className="flex flex-col flex-1 min-h-0 overflow-hidden"
+        >
           <Modal.Body>
             <div className="flex flex-col gap-y-2">
               <div className="grid grid-cols-2 gap-x-2">
@@ -80,12 +94,6 @@ const AddAddress = ({
                 />
               </div>
               <Input
-                label="Empresa"
-                name="company"
-                autoComplete="organization"
-                data-testid="company-input"
-              />
-              <Input
                 label="Dirección"
                 name="address_1"
                 required
@@ -93,12 +101,49 @@ const AddAddress = ({
                 data-testid="address-1-input"
               />
               <Input
-                label="Apartamento, suite, etc."
+                label="Nota para la entrega (opcional)"
                 name="address_2"
-                autoComplete="address-line2"
                 data-testid="address-2-input"
               />
-              <div className="grid grid-cols-[144px_1fr] gap-x-2">
+              <div className="grid grid-cols-2 gap-x-2">
+                <NativeSelect
+                  name="province"
+                  placeholder="Provincia"
+                  required
+                  value={provinceName}
+                  onChange={(e) => {
+                    setProvinceName(e.target.value)
+                    setMunicipalityName("")
+                  }}
+                  data-testid="province-select"
+                >
+                  {zones.map((province) => (
+                    <option key={province.id} value={province.name}>
+                      {province.name}
+                    </option>
+                  ))}
+                </NativeSelect>
+                <NativeSelect
+                  name="city"
+                  placeholder={
+                    provinceName
+                      ? "Municipio"
+                      : "Elige una provincia primero"
+                  }
+                  required
+                  disabled={!provinceName}
+                  value={municipalityName}
+                  onChange={(e) => setMunicipalityName(e.target.value)}
+                  data-testid="city-select"
+                >
+                  {municipalities.map((municipality) => (
+                    <option key={municipality.id} value={municipality.name}>
+                      {municipality.name}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </div>
+              <div className="grid grid-cols-2 gap-x-2">
                 <Input
                   label="Código postal"
                   name="postal_code"
@@ -107,32 +152,12 @@ const AddAddress = ({
                   data-testid="postal-code-input"
                 />
                 <Input
-                  label="Ciudad"
-                  name="city"
-                  required
-                  autoComplete="locality"
-                  data-testid="city-input"
+                  label="Teléfono"
+                  name="phone"
+                  autoComplete="phone"
+                  data-testid="phone-input"
                 />
               </div>
-              <Input
-                label="Provincia / Departamento"
-                name="province"
-                autoComplete="address-level1"
-                data-testid="state-input"
-              />
-              <CountrySelect
-                region={region}
-                name="country_code"
-                required
-                autoComplete="country"
-                data-testid="country-select"
-              />
-              <Input
-                label="Teléfono"
-                name="phone"
-                autoComplete="phone"
-                data-testid="phone-input"
-              />
             </div>
             {formState.error && (
               <div

@@ -5,6 +5,7 @@ import AddressBook from "@modules/account/components/address-book"
 
 import { getRegion } from "@lib/data/regions"
 import { retrieveCustomer } from "@lib/data/customer"
+import { listZones } from "@lib/data/zones"
 
 export const metadata: Metadata = {
   title: "Direcciones",
@@ -23,6 +24,8 @@ export default async function Addresses(props: {
     notFound()
   }
 
+  const zones = await listZones()
+
   return (
     <div className="w-full" data-testid="addresses-page-wrapper">
       <div className="mb-8 flex flex-col gap-y-4">
@@ -33,7 +36,7 @@ export default async function Addresses(props: {
           checkout.
         </p>
       </div>
-      <AddressBook customer={customer} region={region} />
+      <AddressBook customer={customer} zones={zones} />
     </div>
   )
 }

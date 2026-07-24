@@ -4,25 +4,26 @@ import {
   deleteCustomerAddress,
   updateCustomerAddress,
 } from "@lib/data/customer"
+import type { ZoneProvince } from "@lib/data/zones"
 import useToggleState from "@lib/hooks/use-toggle-state"
 import { PencilSquare as Edit, Trash } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
-import CountrySelect from "@modules/checkout/components/country-select"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
 import Input from "@modules/common/components/input"
 import Modal from "@modules/common/components/modal"
+import NativeSelect from "@modules/common/components/native-select"
 import { Button, Heading, Text, clx } from "@modules/common/components/ui"
 import Spinner from "@modules/common/icons/spinner"
-import React, { useActionState, useEffect, useState } from "react"
+import React, { useActionState, useEffect, useMemo, useState } from "react"
 
 type EditAddressProps = {
-  region: HttpTypes.StoreRegion
+  zones: ZoneProvince[]
   address: HttpTypes.StoreCustomerAddress
   isActive?: boolean
 }
 
 const EditAddress: React.FC<EditAddressProps> = ({
-  region,
+  zones,
   address,
   isActive = false,
 }) => {
@@ -34,6 +35,17 @@ const EditAddress: React.FC<EditAddressProps> = ({
     success: false,
     error: null,
   } as { success: boolean; error: string | null })
+
+  // Legacy free-text `province`/`city` may not match any real zone name
+  // (see .context/reports for the zones↔addresses audit) — in that case the
+  // selects simply show unselected, prompting the user to pick a real one.
+  const [provinceName, setProvinceName] = useState(address.province || "")
+  const [municipalityName, setMunicipalityName] = useState(address.city || "")
+
+  const municipalities = useMemo(
+    () => zones.find((p) => p.name === provinceName)?.municipalities ?? [],
+    [zones, provinceName]
+  )
 
   const close = () => {
     setSuccessState(false)
@@ -77,14 +89,6 @@ const EditAddress: React.FC<EditAddressProps> = ({
           >
             {address.first_name} {address.last_name}
           </Heading>
-          {address.company && (
-            <Text
-              className="txt-compact-small text-ui-fg-base"
-              data-testid="address-company"
-            >
-              {address.company}
-            </Text>
-          )}
           <Text className="flex flex-col text-left text-base-regular mt-2">
             <span data-testid="address-address">
               {address.address_1}
@@ -94,8 +98,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
               {address.postal_code}, {address.city}
             </span>
             <span data-testid="address-province-country">
-              {address.province && `${address.province}, `}
-              {address.country_code?.toUpperCase()}
+              {address.province}
             </span>
           </Text>
         </div>
@@ -123,7 +126,10 @@ const EditAddress: React.FC<EditAddressProps> = ({
         <Modal.Title>
           <Heading className="mb-2">Editar dirección</Heading>
         </Modal.Title>
-        <form action={formAction}>
+        <form
+          action={formAction}
+          className="flex flex-col flex-1 min-h-0 overflow-hidden"
+        >
           <input type="hidden" name="addressId" value={address.id} />
           <Modal.Body>
             <div className="grid grid-cols-1 gap-y-2">
@@ -146,13 +152,6 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 />
               </div>
               <Input
-                label="Empresa"
-                name="company"
-                autoComplete="organization"
-                defaultValue={address.company || undefined}
-                data-testid="company-input"
-              />
-              <Input
                 label="Dirección"
                 name="address_1"
                 required
@@ -161,13 +160,50 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 data-testid="address-1-input"
               />
               <Input
-                label="Apartamento, suite, etc."
+                label="Nota para la entrega (opcional)"
                 name="address_2"
-                autoComplete="address-line2"
                 defaultValue={address.address_2 || undefined}
                 data-testid="address-2-input"
               />
-              <div className="grid grid-cols-[144px_1fr] gap-x-2">
+              <div className="grid grid-cols-2 gap-x-2">
+                <NativeSelect
+                  name="province"
+                  placeholder="Provincia"
+                  required
+                  value={provinceName}
+                  onChange={(e) => {
+                    setProvinceName(e.target.value)
+                    setMunicipalityName("")
+                  }}
+                  data-testid="province-select"
+                >
+                  {zones.map((province) => (
+                    <option key={province.id} value={province.name}>
+                      {province.name}
+                    </option>
+                  ))}
+                </NativeSelect>
+                <NativeSelect
+                  name="city"
+                  placeholder={
+                    provinceName
+                      ? "Municipio"
+                      : "Elige una provincia primero"
+                  }
+                  required
+                  disabled={!provinceName}
+                  value={municipalityName}
+                  onChange={(e) => setMunicipalityName(e.target.value)}
+                  data-testid="city-select"
+                >
+                  {municipalities.map((municipality) => (
+                    <option key={municipality.id} value={municipality.name}>
+                      {municipality.name}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </div>
+              <div className="grid grid-cols-2 gap-x-2">
                 <Input
                   label="Código postal"
                   name="postal_code"
@@ -177,36 +213,13 @@ const EditAddress: React.FC<EditAddressProps> = ({
                   data-testid="postal-code-input"
                 />
                 <Input
-                  label="Ciudad"
-                  name="city"
-                  required
-                  autoComplete="locality"
-                  defaultValue={address.city || undefined}
-                  data-testid="city-input"
+                  label="Teléfono"
+                  name="phone"
+                  autoComplete="phone"
+                  defaultValue={address.phone || undefined}
+                  data-testid="phone-input"
                 />
               </div>
-              <Input
-                label="Provincia / Departamento"
-                name="province"
-                autoComplete="address-level1"
-                defaultValue={address.province || undefined}
-                data-testid="state-input"
-              />
-              <CountrySelect
-                name="country_code"
-                region={region}
-                required
-                autoComplete="country"
-                defaultValue={address.country_code || undefined}
-                data-testid="country-select"
-              />
-              <Input
-                label="Teléfono"
-                name="phone"
-                autoComplete="phone"
-                defaultValue={address.phone || undefined}
-                data-testid="phone-input"
-              />
             </div>
             {formState.error && (
               <div className="text-rose-500 text-small-regular py-2">

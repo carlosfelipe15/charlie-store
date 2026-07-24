@@ -1,19 +1,60 @@
 import { HttpTypes } from "@medusajs/types"
+import { ALL_COUNTRIES } from "@lib/util/countries"
 import Input from "@modules/common/components/input"
-import React, { useState } from "react"
-import CountrySelect from "../country-select"
+import NativeSelect from "@modules/common/components/native-select"
+import React, { useMemo, useState } from "react"
 
-const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
+const BillingAddress = ({
+  cart,
+  customer,
+}: {
+  cart: HttpTypes.StoreCart | null
+  customer: HttpTypes.StoreCustomer | null
+}) => {
+  // Billing is independent of shipping (it's normal for them to differ) —
+  // auto-load it from the customer's saved profile address instead, still
+  // editable. Prefers a saved address explicitly marked as default billing,
+  // then falls back to the customer's first saved address.
+  const profileAddress = useMemo(
+    () =>
+      customer?.addresses.find((a) => a.is_default_billing) ??
+      customer?.addresses[0] ??
+      null,
+    [customer]
+  )
+
   const [formData, setFormData] = useState<Record<string, string>>({
-    "billing_address.first_name": cart?.billing_address?.first_name || "",
-    "billing_address.last_name": cart?.billing_address?.last_name || "",
-    "billing_address.address_1": cart?.billing_address?.address_1 || "",
-    "billing_address.company": cart?.billing_address?.company || "",
-    "billing_address.postal_code": cart?.billing_address?.postal_code || "",
-    "billing_address.city": cart?.billing_address?.city || "",
-    "billing_address.country_code": cart?.billing_address?.country_code || "",
-    "billing_address.province": cart?.billing_address?.province || "",
-    "billing_address.phone": cart?.billing_address?.phone || "",
+    "billing_address.first_name":
+      cart?.billing_address?.first_name ||
+      profileAddress?.first_name ||
+      customer?.first_name ||
+      "",
+    "billing_address.last_name":
+      cart?.billing_address?.last_name ||
+      profileAddress?.last_name ||
+      customer?.last_name ||
+      "",
+    "billing_address.address_1":
+      cart?.billing_address?.address_1 || profileAddress?.address_1 || "",
+    "billing_address.company":
+      cart?.billing_address?.company || profileAddress?.company || "",
+    "billing_address.postal_code":
+      cart?.billing_address?.postal_code || profileAddress?.postal_code || "",
+    "billing_address.city":
+      cart?.billing_address?.city || profileAddress?.city || "",
+    // Billing can be in any country (unlike shipping, always Cuba) — default
+    // to the profile address' country, falling back to Cuba.
+    "billing_address.country_code":
+      cart?.billing_address?.country_code ||
+      profileAddress?.country_code ||
+      "cu",
+    "billing_address.province":
+      cart?.billing_address?.province || profileAddress?.province || "",
+    "billing_address.phone":
+      cart?.billing_address?.phone ||
+      profileAddress?.phone ||
+      customer?.phone ||
+      "",
   })
 
   const handleChange = (
@@ -81,15 +122,21 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
           value={formData["billing_address.city"]}
           onChange={handleChange}
         />
-        <CountrySelect
+        <NativeSelect
           name="billing_address.country_code"
+          placeholder="País"
           autoComplete="country"
-          region={cart?.region}
           value={formData["billing_address.country_code"]}
           onChange={handleChange}
           required
           data-testid="billing-country-select"
-        />
+        >
+          {ALL_COUNTRIES.map((country) => (
+            <option key={country.value} value={country.value}>
+              {country.label}
+            </option>
+          ))}
+        </NativeSelect>
         <Input
           label="Departamento / Provincia"
           name="billing_address.province"

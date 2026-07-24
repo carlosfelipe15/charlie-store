@@ -168,13 +168,17 @@ export const addCustomerAddress = async (
   const address = {
     first_name: formData.get("first_name") as string,
     last_name: formData.get("last_name") as string,
-    company: formData.get("company") as string,
-    address_1: formData.get("address_1") as string,
+    // "Nota para la entrega" reuses address_2 — no company field for a
+    // single-country grocery storefront.
     address_2: formData.get("address_2") as string,
+    address_1: formData.get("address_1") as string,
     city: formData.get("city") as string,
     postal_code: formData.get("postal_code") as string,
     province: formData.get("province") as string,
-    country_code: formData.get("country_code") as string,
+    // Shared with the profile's billing address form, which does submit a
+    // country — the shipping address book doesn't (always Cuba), so default
+    // to "cu" only when the field is absent.
+    country_code: (formData.get("country_code") as string) || "cu",
     phone: formData.get("phone") as string,
     is_default_billing: isDefaultBilling,
     is_default_shipping: isDefaultShipping,
@@ -229,13 +233,15 @@ export const updateCustomerAddress = async (
   const address = {
     first_name: formData.get("first_name") as string,
     last_name: formData.get("last_name") as string,
-    company: formData.get("company") as string,
-    address_1: formData.get("address_1") as string,
     address_2: formData.get("address_2") as string,
+    address_1: formData.get("address_1") as string,
     city: formData.get("city") as string,
     postal_code: formData.get("postal_code") as string,
     province: formData.get("province") as string,
-    country_code: formData.get("country_code") as string,
+    // Shared with the profile's billing address form, which does submit a
+    // country — the shipping address book doesn't (always Cuba), so default
+    // to "cu" only when the field is absent.
+    country_code: (formData.get("country_code") as string) || "cu",
   } as HttpTypes.StoreUpdateCustomerAddress
 
   const phone = formData.get("phone") as string

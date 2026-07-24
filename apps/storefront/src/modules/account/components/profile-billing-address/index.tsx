@@ -6,31 +6,17 @@ import Input from "@modules/common/components/input"
 import NativeSelect from "@modules/common/components/native-select"
 
 import { addCustomerAddress, updateCustomerAddress } from "@lib/data/customer"
+import { ALL_COUNTRIES } from "@lib/util/countries"
 import { HttpTypes } from "@medusajs/types"
 import AccountInfo from "../account-info"
 
 type MyInformationProps = {
   customer: HttpTypes.StoreCustomer
-  regions: HttpTypes.StoreRegion[]
 }
 
 const ProfileBillingAddress: React.FC<MyInformationProps> = ({
   customer,
-  regions,
 }) => {
-  const regionOptions = useMemo(() => {
-    return (
-      regions
-        ?.map((region) => {
-          return region.countries?.map((country) => ({
-            value: country.iso_2,
-            label: country.display_name,
-          }))
-        })
-        .flat() || []
-    )
-  }, [regions])
-
   const [successState, setSuccessState] = React.useState(false)
 
   const billingAddress = customer.addresses?.find(
@@ -67,8 +53,8 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
     }
 
     const country =
-      regionOptions?.find(
-        (country) => country?.value === billingAddress.country_code
+      ALL_COUNTRIES.find(
+        (country) => country.value === billingAddress.country_code
       )?.label || billingAddress.country_code?.toUpperCase()
 
     return (
@@ -76,18 +62,14 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
         <span>
           {billingAddress.first_name} {billingAddress.last_name}
         </span>
-        <span>{billingAddress.company}</span>
-        <span>
-          {billingAddress.address_1}
-          {billingAddress.address_2 ? `, ${billingAddress.address_2}` : ""}
-        </span>
+        <span>{billingAddress.address_1}</span>
         <span>
           {billingAddress.postal_code}, {billingAddress.city}
         </span>
         <span>{country}</span>
       </div>
     )
-  }, [billingAddress, regionOptions])
+  }, [billingAddress])
 
   return (
     <form action={formAction} onReset={() => clearState()} className="w-full">
@@ -118,12 +100,6 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
             />
           </div>
           <Input
-            label="Empresa"
-            name="company"
-            defaultValue={billingAddress?.company || undefined}
-            data-testid="billing-company-input"
-          />
-          <Input
             label="Teléfono"
             name="phone"
             type="phone"
@@ -138,12 +114,6 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
             defaultValue={billingAddress?.address_1 || undefined}
             required
             data-testid="billing-address-1-input"
-          />
-          <Input
-            label="Apartamento, suite, etc."
-            name="address_2"
-            defaultValue={billingAddress?.address_2 || undefined}
-            data-testid="billing-address-2-input"
           />
           <div className="grid grid-cols-[144px_1fr] gap-x-2">
             <Input
@@ -169,18 +139,16 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
           />
           <NativeSelect
             name="country_code"
+            label="País"
             defaultValue={billingAddress?.country_code || undefined}
             required
             data-testid="billing-country-code-select"
           >
-            <option value="">-</option>
-            {regionOptions.map((option, i) => {
-              return (
-                <option key={i} value={option?.value}>
-                  {option?.label}
-                </option>
-              )
-            })}
+            {ALL_COUNTRIES.map((country) => (
+              <option key={country.value} value={country.value}>
+                {country.label}
+              </option>
+            ))}
           </NativeSelect>
         </div>
       </AccountInfo>

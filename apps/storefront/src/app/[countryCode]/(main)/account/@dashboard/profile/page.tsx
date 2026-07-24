@@ -6,7 +6,6 @@ import ProfileEmail from "@modules/account/components/profile-email"
 import ProfileName from "@modules/account/components/profile-name"
 import ProfilePassword from "@modules/account/components/profile-password"
 import { notFound } from "next/navigation"
-import { listRegions } from "@lib/data/regions"
 import { retrieveCustomer } from "@lib/data/customer"
 
 export const metadata: Metadata = {
@@ -16,9 +15,8 @@ export const metadata: Metadata = {
 
 export default async function Profile() {
   const customer = await retrieveCustomer()
-  const regions = await listRegions()
 
-  if (!customer || !regions) {
+  if (!customer) {
     notFound()
   }
 
@@ -41,7 +39,7 @@ export default async function Profile() {
         <Divider />
         <ProfilePassword customer={customer} />
         <Divider />
-        <ProfileBillingAddress customer={customer} regions={regions} />
+        <ProfileBillingAddress customer={customer} />
       </div>
     </div>
   )
