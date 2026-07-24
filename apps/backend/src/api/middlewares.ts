@@ -8,6 +8,8 @@ import { createFindParams } from "@medusajs/medusa/api/utils/validators"
 import { PostAdminCreateBrand, PostAdminUpdateBrand } from "./admin/brands/validators";
 import { PostStoreCreateReview, GetStoreReviewsParams } from "./store/reviews/validators";
 import { PostStoreCreateFavorite, GetStoreFavoritesParams } from "./store/favorites/validators";
+import { PostStoreZoneEligibilityCheck } from "./store/zones/validators";
+import { PostAdminSetProductZones } from "./admin/products/[id]/zones/validators";
 import { storeProductsWithBrandMiddlewares } from "./store/products-list/middlewares";
 import { z } from "zod";
 
@@ -96,6 +98,16 @@ export default defineMiddlewares({
             middlewares: [
                 authenticate("customer", ["session", "bearer"]),
             ],
+        },
+        {
+            matcher: "/store/zones/eligibility-check",
+            method: "POST",
+            middlewares: [validateAndTransformBody(PostStoreZoneEligibilityCheck)],
+        },
+        {
+            matcher: "/admin/products/:id/zones",
+            method: "POST",
+            middlewares: [validateAndTransformBody(PostAdminSetProductZones)],
         },
         {
             matcher: "/admin/products",
