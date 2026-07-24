@@ -2,7 +2,9 @@
 
 Punto de entrada a `.context/`. Actualizar cada vez que cambie la fase activa o se shippee un feature.
 
-**Última actualización:** 2026-07-18 (Fase 11 — filtros de PLP: Atributos, Calificación, Promociones y chips de filtros activos, ver tabla abajo)
+**Última actualización:** 2026-07-23 (auditoría de "Mi cuenta"/Perfil vs. diseño de referencia — ver sección "🔍 Auditoría: Sección 'Mi cuenta' vs. diseño de referencia" en `backlog.md`: `[UI/PEDIDOS]` como hallazgo principal, `[UI/DIRECCIONES]`, `[CLEANUP]` de `account-nav`, y `[FEATURE/CUENTA-FIDELIZACION]` evaluado y diferido)
+
+Actualización anterior — 2026-07-19 (análisis de factibilidad + plan propuesto de Zonas de entrega por Provincia/Municipio — ver "Pendientes que cruzan sesiones" y `plan-zonas-entrega-provincia-municipio.md`; sin decisión de ejecución)
 
 ## Fase actual
 
