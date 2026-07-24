@@ -42,7 +42,7 @@ export default function RodiMegaMenu({
       onMouseLeave={onClose}
     >
       <div className="p-3 border-r border-rm-line-2 max-h-[420px] overflow-y-auto">
-        {parents.slice(0, 12).map((cat) => {
+        {parents.map((cat) => {
           const isActive = cat.id === active?.id
           const visual = getCategoryVisual(cat.handle, cat.name)
           return (
