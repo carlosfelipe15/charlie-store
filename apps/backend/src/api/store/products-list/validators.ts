@@ -3,6 +3,9 @@ import { StoreGetProductsParams as CoreStoreGetProductsParams } from "@medusajs/
 
 const BrandIdField = z.union([z.string(), z.array(z.string())]).optional();
 const TagIdField = z.union([z.string(), z.array(z.string())]).optional();
+// A single municipality id (the "Entregar en" zone). Availability is permissive:
+// a product with no zone restriction is shown in every zone (resolved in route.ts).
+const ZoneIdField = z.string().optional();
 const RatingGteField = z.coerce.number().min(1).max(5).optional();
 const OnSaleField = z
     .union([z.literal("true"), z.boolean()])
@@ -24,7 +27,7 @@ const IncludeFacetsField = z
  */
 export const StoreGetProductsListParams = z.any().transform((raw, ctx) => {
     const input = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
-    const { brand_id, tag_id, rating_gte, on_sale, include_facets, ...rest } = input;
+    const { brand_id, tag_id, zone_id, rating_gte, on_sale, include_facets, ...rest } = input;
 
     const brandResult = BrandIdField.safeParse(brand_id);
     if (!brandResult.success) {
@@ -35,6 +38,12 @@ export const StoreGetProductsListParams = z.any().transform((raw, ctx) => {
     const tagResult = TagIdField.safeParse(tag_id);
     if (!tagResult.success) {
         tagResult.error.issues.forEach((issue) => ctx.addIssue(issue as z.IssueData));
+        return z.NEVER;
+    }
+
+    const zoneResult = ZoneIdField.safeParse(zone_id);
+    if (!zoneResult.success) {
+        zoneResult.error.issues.forEach((issue) => ctx.addIssue(issue as z.IssueData));
         return z.NEVER;
     }
 
@@ -66,6 +75,7 @@ export const StoreGetProductsListParams = z.any().transform((raw, ctx) => {
         ...(coreResult.data as object),
         brand_id: brandResult.data,
         tag_id: tagResult.data,
+        zone_id: zoneResult.data,
         rating_gte: ratingResult.data,
         on_sale: onSaleResult.data,
         include_facets: includeFacetsResult.data,

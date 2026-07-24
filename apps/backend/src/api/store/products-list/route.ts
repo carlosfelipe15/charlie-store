@@ -4,6 +4,7 @@ import { ContainerRegistrationKeys, isPresent, QueryContext } from "@medusajs/fr
 import { wrapVariantsWithInventoryQuantityForSalesChannel } from "@medusajs/medusa/api/utils/middlewares/index";
 import { wrapProductsWithTaxPrices } from "@medusajs/medusa/api/store/products/helpers";
 import { StoreRequestWithContext } from "@medusajs/medusa/api/store/types";
+import { getZoneEligibleProductIds } from "../../../modules/zone/utils/product-eligibility";
 
 type ProductsRequest = StoreRequestWithContext<HttpTypes.StoreProductListParams>;
 
@@ -91,6 +92,8 @@ export const GET = async (req: ProductsRequest, res: MedusaResponse) => {
     delete filters.rating_gte;
     const onSale = filters.on_sale;
     delete filters.on_sale;
+    const zoneId = filters.zone_id;
+    delete filters.zone_id;
     const includeFacets = filters.include_facets === true;
     delete filters.include_facets;
     // Snapshot of the "scope" filters (category, status, sales channel, q) —
@@ -99,15 +102,24 @@ export const GET = async (req: ProductsRequest, res: MedusaResponse) => {
     // because a filter in the same dimension is already selected.
     const scopeFilters: Record<string, any> = { ...filters };
 
+    // Resolved once (zone doesn't depend on includeFacets or brand_id/etc.)
+    // and reused both for facet counts below and for the main id-intersection
+    // pass further down — avoids resolving eligibility twice per request.
+    const eligibleProductIds: Set<string> | undefined = isPresent(zoneId)
+        ? await getZoneEligibleProductIds(query, zoneId)
+        : undefined;
+
     // Facet counts for the sidebar (`?include_facets=true`) — computed once
     // from `scopeFilters` only (category/status/q), so selecting a brand
-    // doesn't zero out every other brand's count. Same "small catalog, JS
-    // last-resort" justification as the rating_gte/on_sale filters above:
-    // one extra query.graph() call, in-memory tally, no new aggregation
-    // machinery. Costs nothing when the flag isn't set.
+    // doesn't zero out every other brand's count. Also scoped to the active
+    // delivery zone so a brand with no eligible products in the current zone
+    // shows a 0/hidden count instead of a stale catalog-wide one. Same
+    // "small catalog, JS last-resort" justification as the rating_gte/on_sale
+    // filters above: one extra query.graph() call, in-memory tally, no new
+    // aggregation machinery. Costs nothing when the flag isn't set.
     let facets: Record<string, unknown> | undefined;
     if (includeFacets) {
-        const [{ data: scopedProducts }, { data: allReviews }] = await Promise.all([
+        const [{ data: scopedProductsRaw }, { data: allReviews }] = await Promise.all([
             query.graph({
                 entity: "product",
                 fields: ["id", "brand.id", "tags.id", "variants.calculated_price.*"],
@@ -121,6 +133,10 @@ export const GET = async (req: ProductsRequest, res: MedusaResponse) => {
                 pagination: { take: 10000, skip: 0 },
             }),
         ]);
+
+        const scopedProducts = eligibleProductIds
+            ? (scopedProductsRaw as any[]).filter((product) => eligibleProductIds.has(product.id))
+            : (scopedProductsRaw as any[]);
 
         const scopedIds = new Set((scopedProducts as any[]).map((product) => product.id));
 
@@ -226,6 +242,14 @@ export const GET = async (req: ProductsRequest, res: MedusaResponse) => {
             .map((product) => product.id);
 
         matchedIdSets.push(matchedIds);
+    }
+
+    // Zone ("Entregar en") filter. Permissive fallback — see
+    // `modules/zone/utils/product-eligibility.ts` (shared with the cart
+    // eligibility-check endpoint used by the zone-conflict warning).
+    // `eligibleProductIds` was already resolved above (also used for facets).
+    if (eligibleProductIds) {
+        matchedIdSets.push(Array.from(eligibleProductIds));
     }
 
     if (matchedIdSets.length > 0) {
