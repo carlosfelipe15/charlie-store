@@ -16,6 +16,7 @@ import {
 } from "./cookies"
 import { getRegion } from "./regions"
 import { getLocale } from "./locale-actions"
+import { checkZoneEligibility, getActiveZoneId, listZones, setActiveZone } from "./zones"
 
 /**
  * Retrieves a cart by its ID. If no ID is provided, it will use the cart ID from the cookies.
@@ -349,37 +350,125 @@ export async function submitPromotionForm(
   }
 }
 
+type IneligibleLineItem = { id: string; title: string; thumbnail: string | null }
+
+export type SetAddressesState =
+  | { status: "idle" }
+  | { status: "error"; message: string }
+  | {
+      status: "zone-conflict"
+      municipalityId: string
+      items: IneligibleLineItem[]
+    }
+
+async function findIneligibleLineItems(
+  cartId: string,
+  municipalityId: string
+): Promise<IneligibleLineItem[]> {
+  const cart = await retrieveCart(cartId)
+  const productIds = (cart?.items ?? [])
+    .map((item) => item.product_id)
+    .filter((id): id is string => !!id)
+
+  if (!productIds.length) {
+    return []
+  }
+
+  const ineligible = await checkZoneEligibility(municipalityId, productIds)
+  if (!ineligible.length) {
+    return []
+  }
+
+  return (cart?.items ?? [])
+    .filter((item) => item.product_id && ineligible.includes(item.product_id))
+    .map((item) => ({
+      id: item.id,
+      title: item.product_title ?? item.title,
+      thumbnail: item.thumbnail ?? null,
+    }))
+}
+
 // TODO: Pass a POJO instead of a form entity here
-export async function setAddresses(currentState: unknown, formData: FormData) {
+export async function setAddresses(
+  currentState: SetAddressesState,
+  formData: FormData
+): Promise<SetAddressesState> {
+  let cartEmptied = false
+
   try {
     if (!formData) {
       throw new Error("No form data found when setting addresses")
     }
-    const cartId = getCartId()
+    const cartId = await getCartId()
     if (!cartId) {
       throw new Error("No existing cart found when setting addresses")
     }
 
-    const data = {
-      shipping_address: {
-        first_name: formData.get("shipping_address.first_name"),
-        last_name: formData.get("shipping_address.last_name"),
-        address_1: formData.get("shipping_address.address_1"),
-        address_2: "",
-        company: formData.get("shipping_address.company"),
-        postal_code: formData.get("shipping_address.postal_code"),
-        city: formData.get("shipping_address.city"),
-        country_code: formData.get("shipping_address.country_code"),
-        province: formData.get("shipping_address.province"),
-        phone: formData.get("shipping_address.phone"),
-      },
-      email: formData.get("email"),
-    } as any
+    const provinceName = formData.get("shipping_address.province") as string
+    const municipalityName = formData.get("shipping_address.city") as string
+    const confirmed = formData.get("confirm_zone_change") === "true"
 
-    const sameAsBilling = formData.get("same_as_billing")
-    if (sameAsBilling === "on") data.billing_address = data.shipping_address
+    // Resolve the chosen municipality (name → id) against the same zone data
+    // the picker and the shipping-address selects use. Legacy/unresolvable
+    // names fall through permissively — no check, no cookie sync.
+    const zones = await listZones()
+    const municipalityId = zones
+      .find((province) => province.name === provinceName)
+      ?.municipalities.find((m) => m.name === municipalityName)?.id
 
-    if (sameAsBilling !== "on")
+    const activeZoneId = await getActiveZoneId()
+    const zoneChanged = !!municipalityId && municipalityId !== activeZoneId
+
+    if (zoneChanged && !confirmed) {
+      const items = await findIneligibleLineItems(cartId, municipalityId!)
+      if (items.length) {
+        return { status: "zone-conflict", municipalityId: municipalityId!, items }
+      }
+    }
+
+    if (zoneChanged && confirmed) {
+      // Recompute server-side rather than trusting whatever the client sent
+      // back on the confirm resubmit.
+      const items = await findIneligibleLineItems(cartId, municipalityId!)
+      if (items.length) {
+        await Promise.all(items.map((item) => deleteLineItem(item.id)))
+        // If every item in the cart was restricted to the old zone, the cart
+        // is now empty — saving an address and continuing to the delivery
+        // step would land the customer on a checkout with nothing to check
+        // out. Bail out of the flow entirely instead (see the redirect below).
+        const updatedCart = await retrieveCart(cartId)
+        cartEmptied = !updatedCart?.items?.length
+      }
+    }
+
+    if (cartEmptied) {
+      // Still worth syncing: the customer explicitly confirmed this zone,
+      // so the catalog they land back on should already reflect it.
+      if (municipalityId) {
+        await setActiveZone(municipalityId)
+      }
+    } else {
+      const data = {
+        shipping_address: {
+          first_name: formData.get("shipping_address.first_name"),
+          last_name: formData.get("shipping_address.last_name"),
+          address_1: formData.get("shipping_address.address_1"),
+          // "Nota para la entrega" reuses the address_2 field — no separate
+          // "company"/apartment fields for a single-country grocery storefront.
+          address_2: formData.get("shipping_address.address_2") || "",
+          company: "",
+          postal_code: formData.get("shipping_address.postal_code"),
+          city: formData.get("shipping_address.city"),
+          // Single-country region (Cuba) — no country picker in the form.
+          country_code: "cu",
+          province: formData.get("shipping_address.province"),
+          phone: formData.get("shipping_address.phone"),
+        },
+        email: formData.get("email"),
+      } as any
+
+      // Billing is independent of shipping — it's normal for them to differ,
+      // so it's always its own form, never mirrored from shipping.
       data.billing_address = {
         first_name: formData.get("billing_address.first_name"),
         last_name: formData.get("billing_address.last_name"),
@@ -392,14 +481,26 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
         province: formData.get("billing_address.province"),
         phone: formData.get("billing_address.phone"),
       }
-    await updateCart(data)
+      await updateCart(data)
+
+      // Keep the "Entregar en" cookie in sync with wherever the order is
+      // actually shipping to, so the catalog stays consistent afterward.
+      if (municipalityId) {
+        await setActiveZone(municipalityId)
+      }
+    }
   } catch (e: any) {
-    return e.message
+    return { status: "error", message: e.message }
   }
 
-  redirect(
-    `/${formData.get("shipping_address.country_code")}/checkout?step=delivery`
-  )
+  if (cartEmptied) {
+    // Nothing left to check out — send the customer back to their (empty)
+    // cart instead of the delivery step, with a flag the cart page turns
+    // into a toast (see `modules/cart/components/zone-emptied-notice`).
+    redirect(`/cu/cart?zone_emptied=true`)
+  }
+
+  redirect(`/cu/checkout?step=delivery`)
 }
 
 /**

@@ -1,32 +1,37 @@
 import { HttpTypes } from "@medusajs/types"
+import type { ActiveZone, ZoneProvince } from "@lib/data/zones"
 import { Container } from "@modules/common/components/ui"
-import Checkbox from "@modules/common/components/checkbox"
 import Input from "@modules/common/components/input"
+import NativeSelect from "@modules/common/components/native-select"
 import { mapKeys } from "lodash"
 import React, { useEffect, useMemo, useState } from "react"
 import AddressSelect from "../address-select"
-import CountrySelect from "../country-select"
 
 const ShippingAddress = ({
   customer,
   cart,
-  checked,
-  onChange,
+  activeZone,
+  zones,
 }: {
   customer: HttpTypes.StoreCustomer | null
   cart: HttpTypes.StoreCart | null
-  checked: boolean
-  onChange: () => void
+  activeZone?: ActiveZone | null
+  zones: ZoneProvince[]
 }) => {
   const [formData, setFormData] = useState<Record<string, string>>({
     "shipping_address.first_name": cart?.shipping_address?.first_name || "",
     "shipping_address.last_name": cart?.shipping_address?.last_name || "",
     "shipping_address.address_1": cart?.shipping_address?.address_1 || "",
-    "shipping_address.company": cart?.shipping_address?.company || "",
+    // "Nota para la entrega" — reuses address_2, no company/apartment fields
+    // for a single-country grocery storefront.
+    "shipping_address.address_2": cart?.shipping_address?.address_2 || "",
     "shipping_address.postal_code": cart?.shipping_address?.postal_code || "",
-    "shipping_address.city": cart?.shipping_address?.city || "",
-    "shipping_address.country_code": cart?.shipping_address?.country_code || "",
-    "shipping_address.province": cart?.shipping_address?.province || "",
+    // Fall back to the active "Entregar en" zone: municipality → city,
+    // province name → province. Country is always Cuba (no picker).
+    "shipping_address.city":
+      cart?.shipping_address?.city || activeZone?.name || "",
+    "shipping_address.province":
+      cart?.shipping_address?.province || activeZone?.provinceName || "",
     "shipping_address.phone": cart?.shipping_address?.phone || "",
     email: cart?.email || "",
   })
@@ -45,6 +50,13 @@ const ShippingAddress = ({
     [customer?.addresses, countriesInRegion]
   )
 
+  const municipalities = useMemo(
+    () =>
+      zones.find((p) => p.name === formData["shipping_address.province"])
+        ?.municipalities ?? [],
+    [zones, formData]
+  )
+
   const setFormAddress = (
     address?: HttpTypes.StoreCartAddress,
     email?: string
@@ -55,10 +67,9 @@ const ShippingAddress = ({
         "shipping_address.first_name": address?.first_name || "",
         "shipping_address.last_name": address?.last_name || "",
         "shipping_address.address_1": address?.address_1 || "",
-        "shipping_address.company": address?.company || "",
+        "shipping_address.address_2": address?.address_2 || "",
         "shipping_address.postal_code": address?.postal_code || "",
         "shipping_address.city": address?.city || "",
-        "shipping_address.country_code": address?.country_code || "",
         "shipping_address.province": address?.province || "",
         "shipping_address.phone": address?.phone || "",
       }))
@@ -73,8 +84,9 @@ const ShippingAddress = ({
   }
 
   useEffect(() => {
-    // Ensure cart is not null and has a shipping_address before setting form data
-    if (cart && cart.shipping_address) {
+    // Only hydrate from the cart once it holds a real (started) address —
+    // otherwise keep the active-zone fallback defaults for province/city.
+    if (cart && cart.shipping_address?.address_1) {
       setFormAddress(cart?.shipping_address, cart?.email)
     }
 
@@ -91,6 +103,16 @@ const ShippingAddress = ({
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
+    })
+  }
+
+  const handleProvinceChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    setFormData({
+      ...formData,
+      "shipping_address.province": e.target.value,
+      "shipping_address.city": "",
     })
   }
 
@@ -141,12 +163,11 @@ const ShippingAddress = ({
           data-testid="shipping-address-input"
         />
         <Input
-          label="Empresa"
-          name="shipping_address.company"
-          value={formData["shipping_address.company"]}
+          label="Nota para la entrega (opcional)"
+          name="shipping_address.address_2"
+          value={formData["shipping_address.address_2"]}
           onChange={handleChange}
-          autoComplete="organization"
-          data-testid="shipping-company-input"
+          data-testid="shipping-address-2-input"
         />
         <Input
           label="Código postal"
@@ -157,40 +178,46 @@ const ShippingAddress = ({
           required
           data-testid="shipping-postal-code-input"
         />
-        <Input
-          label="Ciudad"
+        <NativeSelect
+          name="shipping_address.province"
+          placeholder="Provincia"
+          value={formData["shipping_address.province"]}
+          onChange={handleProvinceChange}
+          required
+          data-testid="shipping-province-select"
+        >
+          {zones.map((province) => (
+            <option key={province.id} value={province.name}>
+              {province.name}
+            </option>
+          ))}
+        </NativeSelect>
+        <NativeSelect
           name="shipping_address.city"
-          autoComplete="address-level2"
+          placeholder={
+            formData["shipping_address.province"]
+              ? "Municipio"
+              : "Elige una provincia primero"
+          }
           value={formData["shipping_address.city"]}
           onChange={handleChange}
           required
-          data-testid="shipping-city-input"
-        />
-        <CountrySelect
-          name="shipping_address.country_code"
-          autoComplete="country"
-          region={cart?.region}
-          value={formData["shipping_address.country_code"]}
-          onChange={handleChange}
-          required
-          data-testid="shipping-country-select"
-        />
+          disabled={!formData["shipping_address.province"]}
+          data-testid="shipping-city-select"
+        >
+          {municipalities.map((municipality) => (
+            <option key={municipality.id} value={municipality.name}>
+              {municipality.name}
+            </option>
+          ))}
+        </NativeSelect>
         <Input
-          label="Departamento / Provincia"
-          name="shipping_address.province"
-          autoComplete="address-level1"
-          value={formData["shipping_address.province"]}
+          label="Teléfono"
+          name="shipping_address.phone"
+          autoComplete="tel"
+          value={formData["shipping_address.phone"]}
           onChange={handleChange}
-          data-testid="shipping-province-input"
-        />
-      </div>
-      <div className="my-8">
-        <Checkbox
-          label="Dirección de facturación igual que la dirección de envío"
-          name="same_as_billing"
-          checked={checked}
-          onChange={onChange}
-          data-testid="billing-address-checkbox"
+          data-testid="shipping-phone-input"
         />
       </div>
       <div className="grid grid-cols-2 gap-4 mb-4">
@@ -204,14 +231,6 @@ const ShippingAddress = ({
           onChange={handleChange}
           required
           data-testid="shipping-email-input"
-        />
-        <Input
-          label="Teléfono"
-          name="shipping_address.phone"
-          autoComplete="tel"
-          value={formData["shipping_address.phone"]}
-          onChange={handleChange}
-          data-testid="shipping-phone-input"
         />
       </div>
     </>

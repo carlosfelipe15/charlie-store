@@ -122,6 +122,16 @@ export default function RodiPlpFilters({
     ratingGte.length > 0 ||
     onSale
 
+  // Brands with no eligible products in the current scope (category + active
+  // delivery zone) are dropped instead of shown with a "(0)" — filtering by
+  // one would just return an empty grid, which reads as broken rather than
+  // "no results". Falls back to showing every brand when facets haven't
+  // loaded/failed (see listProductFacets), same permissive default as the
+  // count badge itself.
+  const visibleBrands = facets
+    ? brands.filter((brand) => (facets.brand[brand.id] ?? 0) > 0)
+    : brands
+
   return (
     <aside className="hidden small:block w-full small:w-[260px] shrink-0">
       <div
@@ -144,10 +154,10 @@ export default function RodiPlpFilters({
           )}
         </div>
         <SortProducts sortBy={sortBy} setQueryParams={setQueryParams} />
-        {brands.length > 0 && (
+        {visibleBrands.length > 0 && (
           <RodiFilterGroup title="Marca">
             <ul className="flex flex-col" data-testid="brand-filter-list">
-              {brands.map((brand) => (
+              {visibleBrands.map((brand) => (
                 <RodiFilterRow
                   key={brand.id}
                   id={`brand-${brand.id}`}

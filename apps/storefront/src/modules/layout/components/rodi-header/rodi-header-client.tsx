@@ -7,16 +7,15 @@ import {
   RodiIconChevron,
   RodiIconHeart,
   RodiIconMenu,
-  RodiIconPin,
   RodiIconUser,
 } from "@modules/common/icons/rodi"
 import { Locale } from "@lib/data/locales"
+import type { ActiveZone, ZoneCartItem, ZoneProvince } from "@lib/data/zones"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import RodiHeaderSearch from "@modules/layout/components/rodi-header-search"
 import RodiMegaMenu from "@modules/layout/components/rodi-mega-menu"
 import SideMenu from "@modules/layout/components/side-menu"
-import CountrySelect from "@modules/layout/components/country-select"
-import useToggleState from "@lib/hooks/use-toggle-state"
+import RodiZonePicker from "@modules/layout/components/rodi-zone-picker"
 import { clsx } from "clsx"
 import { ReactNode, useCallback, useState } from "react"
 
@@ -28,6 +27,9 @@ const QUICK_LINKS = [
 type RodiHeaderClientProps = {
   categories: HttpTypes.StoreProductCategory[]
   regions: HttpTypes.StoreRegion[] | null
+  zones: ZoneProvince[]
+  activeZone: ActiveZone | null
+  cartItems: ZoneCartItem[]
   locales: Locale[] | null
   currentLocale: string | null
   cartSlot: ReactNode
@@ -38,6 +40,9 @@ type RodiHeaderClientProps = {
 export default function RodiHeaderClient({
   categories,
   regions,
+  zones,
+  activeZone,
+  cartItems,
   locales,
   currentLocale,
   cartSlot,
@@ -45,7 +50,6 @@ export default function RodiHeaderClient({
   favoritesSlot,
 }: RodiHeaderClientProps) {
   const [megaOpen, setMegaOpen] = useState(false)
-  const regionToggleState = useToggleState()
 
   const parents = categories.filter((c) => !c.parent_category)
   const navCategories = parents.slice(0, 6)
@@ -60,6 +64,9 @@ export default function RodiHeaderClient({
           <div className="small:hidden shrink-0">
             <SideMenu
               regions={regions}
+              zones={zones}
+              activeZone={activeZone}
+              cartItems={cartItems}
               locales={locales}
               currentLocale={currentLocale}
             />
@@ -70,19 +77,13 @@ export default function RodiHeaderClient({
             <RodiLogo size={22} className="hidden small:flex" />
           </LocalizedClientLink>
 
-          {regions && (
-            <div
-              className="hidden md:flex items-center gap-2 pl-3 ml-1 border-l border-rm-line text-rm-ink-2 shrink-0"
-              onMouseEnter={regionToggleState.open}
-              onMouseLeave={regionToggleState.close}
-            >
-              <span className="text-rm-red">
-                <RodiIconPin size={16} />
-              </span>
-              <CountrySelect toggleState={regionToggleState} regions={regions} />
-              <RodiIconChevron
-                size={14}
-                chevronDirection={regionToggleState.state ? "up" : "down"}
+          {zones.length > 0 && (
+            <div className="hidden md:flex items-center pl-3 ml-1 border-l border-rm-line shrink-0">
+              <RodiZonePicker
+                zones={zones}
+                activeZone={activeZone}
+                cartItems={cartItems}
+                variant="header"
               />
             </div>
           )}

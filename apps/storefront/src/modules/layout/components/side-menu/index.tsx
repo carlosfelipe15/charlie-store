@@ -8,9 +8,10 @@ import { RodiIconMenu } from "@modules/common/icons/rodi"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { Text, clx } from "@modules/common/components/ui"
 import { Fragment } from "react"
-import CountrySelect from "../country-select"
+import RodiZonePicker from "../rodi-zone-picker"
 import LanguageSelect from "../language-select"
 import { Locale } from "@lib/data/locales"
+import type { ActiveZone, ZoneCartItem, ZoneProvince } from "@lib/data/zones"
 
 
 const SideMenuItems = {
@@ -22,12 +23,21 @@ const SideMenuItems = {
 
 type SideMenuProps = {
   regions: HttpTypes.StoreRegion[] | null
+  zones: ZoneProvince[]
+  activeZone: ActiveZone | null
+  cartItems: ZoneCartItem[]
   locales: Locale[] | null
   currentLocale: string | null
 }
 
-const SideMenu = ({ regions, locales, currentLocale }: SideMenuProps) => {
-  const countryToggleState = useToggleState()
+const SideMenu = ({
+  regions,
+  zones,
+  activeZone,
+  cartItems,
+  locales,
+  currentLocale,
+}: SideMenuProps) => {
   const languageToggleState = useToggleState()
 
   return (
@@ -110,24 +120,16 @@ const SideMenu = ({ regions, locales, currentLocale }: SideMenuProps) => {
                           />
                         </div>
                       )}
-                      <div
-                        className="flex justify-between"
-                        onMouseEnter={countryToggleState.open}
-                        onMouseLeave={countryToggleState.close}
-                      >
-                        {regions && (
-                          <CountrySelect
-                            toggleState={countryToggleState}
-                            regions={regions}
+                      {zones.length > 0 && (
+                        <div className="flex justify-start">
+                          <RodiZonePicker
+                            zones={zones}
+                            activeZone={activeZone}
+                            cartItems={cartItems}
+                            variant="menu"
                           />
-                        )}
-                        <ArrowRightMini
-                          className={clx(
-                            "transition-transform duration-150",
-                            countryToggleState.state ? "-rotate-90" : ""
-                          )}
-                        />
-                      </div>
+                        </div>
+                      )}
                       <Text className="flex justify-between txt-compact-small">
                         © {new Date().getFullYear()} Rodi Mercado. All rights
                         reserved.

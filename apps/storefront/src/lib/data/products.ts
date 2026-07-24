@@ -6,6 +6,7 @@ import { HttpTypes } from "@medusajs/types"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import { getAuthHeaders, getCacheOptions } from "./cookies"
 import { getRegion, retrieveRegion } from "./regions"
+import { getActiveZoneId } from "./zones"
 
 export type ProductFacets = {
   brand: Record<string, number>
@@ -18,11 +19,14 @@ const EMPTY_FACETS: ProductFacets = { brand: {}, tag: {}, rating: {}, on_sale: 0
 
 /**
  * Facet counts for the PLP sidebar ("N productos" next to each brand/tag/
- * rating/on-sale option). Scoped to `categoryId` only — deliberately ignores
- * any brand/tag/rating/on_sale already selected, so picking one brand
- * doesn't zero out every other brand's count (see the backend route's
- * `scopeFilters` comment). Returns `EMPTY_FACETS` (not thrown) on failure so
- * the sidebar degrades to unlabeled filters instead of erroring the page.
+ * rating/on-sale option). Scoped to `categoryId` and the active delivery zone
+ * only — deliberately ignores any brand/tag/rating/on_sale already selected,
+ * so picking one brand doesn't zero out every other brand's count (see the
+ * backend route's `scopeFilters` comment). Zone scoping keeps a brand with no
+ * eligible products in the current zone from showing a stale catalog-wide
+ * count that would then filter down to zero results. Returns `EMPTY_FACETS`
+ * (not thrown) on failure so the sidebar degrades to unlabeled filters
+ * instead of erroring the page.
  */
 export const listProductFacets = async ({
   categoryId,
@@ -45,6 +49,8 @@ export const listProductFacets = async ({
     ...(await getCacheOptions("products")),
   }
 
+  const zoneId = await getActiveZoneId()
+
   return sdk.client
     .fetch<{ facets?: ProductFacets }>(`/store/products-list`, {
       method: "GET",
@@ -55,6 +61,7 @@ export const listProductFacets = async ({
         fields: "id",
         include_facets: true,
         ...(categoryId ? { category_id: [categoryId] } : {}),
+        ...(zoneId ? { zone_id: zoneId } : {}),
       },
       headers,
       next,
@@ -110,6 +117,17 @@ export const listProducts = async ({
     ...(await getCacheOptions("products")),
   }
 
+  // Delivery zone ("Entregar en"): scope listings to what's available in the
+  // active zone. Skipped when fetching a specific product (`id`/`handle`) so a
+  // directly-navigated PDP never disappears just because that product isn't
+  // sold in the currently-selected zone. Permissive fallback (products with no
+  // zone restriction show everywhere) is handled backend-side.
+  const zoneId = await getActiveZoneId()
+  const applyZone =
+    !!zoneId &&
+    !(queryParams as Record<string, unknown> | undefined)?.id &&
+    !(queryParams as Record<string, unknown> | undefined)?.handle
+
   return sdk.client
     .fetch<{ products: HttpTypes.StoreProduct[]; count: number }>(
       // Custom endpoint, not core's /store/products — adds brand_id
@@ -125,6 +143,7 @@ export const listProducts = async ({
           region_id: region?.id,
           fields:
             "*variants.calculated_price,+variants.inventory_quantity,*variants.images,+metadata,+tags,+brand.*,+categories.id,+categories.handle,",
+          ...(applyZone ? { zone_id: zoneId } : {}),
           ...queryParams,
         },
         headers,

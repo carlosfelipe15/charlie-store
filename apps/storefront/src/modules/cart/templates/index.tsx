@@ -3,6 +3,7 @@ import RodiCartShippingBanner from "@modules/cart/components/rodi-cart-shipping-
 import RodiCartSummary from "@modules/cart/components/rodi-cart-summary"
 import EmptyCartMessage from "../components/empty-cart-message"
 import SignInPrompt from "../components/sign-in-prompt"
+import ZoneEmptiedNotice from "../components/zone-emptied-notice"
 import ItemsTemplate from "./items"
 import { HttpTypes } from "@medusajs/types"
 
@@ -17,6 +18,7 @@ const CartTemplate = ({
 
   return (
     <div className="py-8 content-container" data-testid="cart-container">
+      <ZoneEmptiedNotice />
       <RodiBreadcrumbs
         items={[
           { label: "Inicio", href: "/" },
