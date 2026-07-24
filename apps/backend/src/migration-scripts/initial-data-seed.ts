@@ -34,7 +34,11 @@ export default async function initial_data_seed({
     ModuleRegistrationName.FULFILLMENT
   );
 
-  const countries = ["gb", "de", "dk", "se", "fr", "es", "it"];
+  // Single-country store: Cuba. The delivery-zone feature (Province/Municipality,
+  // see .context/plan-zonas-entrega-provincia-municipio.md) is modeled on top of
+  // this single region, NOT by turning provinces into regions. Currency stays
+  // EUR/USD (CUP is not used) — see the store supported_currencies below.
+  const countries = ["cu"];
 
   logger.info("Seeding store data...");
   const {
@@ -99,7 +103,7 @@ export default async function initial_data_seed({
     input: {
       regions: [
         {
-          name: "Europe",
+          name: "Cuba",
           currency_code: "eur",
           countries,
           payment_providers: ["pp_system_default"],
@@ -126,10 +130,10 @@ export default async function initial_data_seed({
     input: {
       locations: [
         {
-          name: "European Warehouse",
+          name: "Almacén Central (La Habana)",
           address: {
-            city: "Copenhagen",
-            country_code: "DK",
+            city: "La Habana",
+            country_code: "CU",
             address_1: "",
           },
         },
@@ -156,41 +160,33 @@ export default async function initial_data_seed({
   const shippingProfile = shippingProfileResult[0];
 
   const fulfillmentSet = await fulfillmentModuleService.createFulfillmentSets({
-    name: "European Warehouse delivery",
+    name: "Cuba delivery",
     type: "shipping",
     service_zones: [
       {
-        name: "Europe",
-        geo_zones: [
-          {
-            country_code: "gb",
-            type: "country",
-          },
-          {
-            country_code: "de",
-            type: "country",
-          },
-          {
-            country_code: "dk",
-            type: "country",
-          },
-          {
-            country_code: "se",
-            type: "country",
-          },
-          {
-            country_code: "fr",
-            type: "country",
-          },
-          {
-            country_code: "es",
-            type: "country",
-          },
-          {
-            country_code: "it",
-            type: "country",
-          },
-        ],
+        name: "Cuba",
+        // Country-level `cu` geo zone only — the robust gate that gets any
+        // Cuban address the flat shipping options. Delivery is flat and
+        // covers all Cuba (Fase C decision,
+        // .context/plan-zonas-entrega-provincia-municipio.md).
+        //
+        // Province-level geo zones were tried here (ISO 3166-2:CU codes) but
+        // removed: they lived in this SAME service zone as the country geo
+        // zone, so they were redundant (Medusa's geo-zone match is OR — the
+        // country zone alone already makes this service zone apply to every
+        // Cuban address); and even without that, `province_code` is matched
+        // as an exact string against `cart.shipping_address.province`, which
+        // this storefront always fills with the human-readable province name
+        // (e.g. "La Habana"), never the ISO code (e.g. "cu-03") — so they
+        // could never have matched anything either. See
+        // `.context/geo-zones-fulfillment.md` for what a real per-province
+        // fulfillment model would need (separate service zones + a rate/time
+        // matrix) — deliberately out of scope until that business decision
+        // is made. `Province.iso_code` now exists as the groundwork for it.
+        geo_zones: countries.map((country_code) => ({
+          country_code,
+          type: "country" as const,
+        })),
       },
     ],
   });
