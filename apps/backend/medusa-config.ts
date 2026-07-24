@@ -24,6 +24,9 @@ module.exports = defineConfig({
       resolve: "./src/modules/favorite",
     },
     {
+      resolve: "./src/modules/zone",
+    },
+    {
       resolve: "@medusajs/index",
     },
   ],
