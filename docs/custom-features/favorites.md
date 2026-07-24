@@ -70,6 +70,7 @@ Todas las rutas requieren cliente autenticado — `authenticate("customer", ["se
 
 - Lista los favoritos del cliente autenticado (`customer_id` siempre de `req.auth_context`, nunca de query params)
 - `query.graph({ entity: "favorite", filters: { customer_id }, ...req.queryConfig })`
+- Excluye del resultado (y del `count`) los favoritos cuyo producto ya no está `published` (despublicado o borrado) — la fila de favorito se conserva (reaparece si el producto se republica), pero no cuenta como "N favoritos" ni aparece en la lista. Como `query.graph()` no puede filtrar `favorite` por un campo del módulo linkeado (`product.status`), esto es una **segunda query** (`query.graph` sobre `product`, `fields: ["id", "status"]`) + filtro en memoria — ver `api/store/favorites/route.ts`
 
 **`POST /store/favorites`**
 

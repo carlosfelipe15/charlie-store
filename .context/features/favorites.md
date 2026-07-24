@@ -25,3 +25,12 @@ El plan original de Favoritos no incluía validación de que `product_id` corres
 ## Consejos para el siguiente agente
 
 - Si agregás un tercer módulo con el mismo patrón Module → Link → Workflow → API que reciba un `product_id` externo en su create, empezá por revisar si `validate-product-exists-step` te sirve tal cual antes de escribir una validación nueva.
+
+## Cambio posterior: excluir productos no publicados de `GET /store/favorites` (2026-07-12)
+
+`GET /store/favorites` contaba y listaba favoritos aunque el producto detrás ya no estuviera `published` (despublicado o borrado desde el admin) — el conteo "N favoritos" que ve el cliente podía incluir productos que ya no existen en la tienda.
+
+- `apps/backend/src/api/store/favorites/route.ts` — el handler `GET` ahora hace una segunda `query.graph({ entity: "product", fields: ["id", "status"], filters: { id: [...] } })` sobre los `product_id` de los favoritos encontrados, y filtra en memoria a los que siguen `published` antes de responder `favorites`/`count`. No se puede resolver en una sola `query.graph` porque `favorite` no puede filtrarse por un campo del módulo `product` linkeado (`product.status`).
+- La fila de `favorite` **no se borra** — si el producto se vuelve a publicar, reaparece solo.
+- No se tocó `POST`/`DELETE` — ambos siguen operando por `product_id` sin necesidad de que el producto esté publicado (deshacer un favorito de un producto despublicado debe seguir funcionando).
+- Reflejado también en [`docs/custom-features/favorites.md`](../../docs/custom-features/favorites.md).

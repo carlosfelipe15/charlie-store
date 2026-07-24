@@ -2,7 +2,9 @@
 
 Punto de entrada a `.context/`. Actualizar cada vez que cambie la fase activa o se shippee un feature.
 
-**Última actualización:** 2026-07-23 (auditoría de "Mi cuenta"/Perfil vs. diseño de referencia — ver sección "🔍 Auditoría: Sección 'Mi cuenta' vs. diseño de referencia" en `backlog.md`: `[UI/PEDIDOS]` como hallazgo principal, `[UI/DIRECCIONES]`, `[CLEANUP]` de `account-nav`, y `[FEATURE/CUENTA-FIDELIZACION]` evaluado y diferido)
+**Última actualización:** 2026-07-24 (dos fixes puntuales de UI, fuera del flujo de `backlog.md`: mega menú "Todas las categorías" ahora muestra todas las categorías — commit `98cb8b4` — y el modal de direcciones mantiene los botones de acción dentro del panel cuando el contenido desborda — commit `1476da3`)
+
+Actualización anterior — 2026-07-23 (auditoría de "Mi cuenta"/Perfil vs. diseño de referencia — ver sección "🔍 Auditoría: Sección 'Mi cuenta' vs. diseño de referencia" en `backlog.md`: `[UI/PEDIDOS]` como hallazgo principal, `[UI/DIRECCIONES]`, `[CLEANUP]` de `account-nav`, y `[FEATURE/CUENTA-FIDELIZACION]` evaluado y diferido)
 
 Actualización anterior — 2026-07-19 (análisis de factibilidad + plan propuesto de Zonas de entrega por Provincia/Municipio — ver "Pendientes que cruzan sesiones" y `plan-zonas-entrega-provincia-municipio.md`; sin decisión de ejecución)
 
@@ -39,7 +41,7 @@ Cambios a una feature **posteriores** a su fase inicial se registran aquí en ve
 
 ## Estado del backlog
 
-Ver [`backlog.md`](./backlog.md) para el detalle completo. Resumen al 2026-07-09: 0 bugs activos (los 4 detectados en la auditoría del 2026-07-08 quedaron resueltos), 6 resueltos recientemente (warning de key, selector de región, bloque de dirección, newsletter, secciones de home, y el feature completo de favoritos), 6 implementaciones pendientes (filtros de PLP por precio/promociones/atributos/calificación — marca ya resuelta; combos de productos — plan guardado, sin ejecutar; tabs de PDP + feature de Preguntas; elementos menores de PDP; bottom tab bar mobile — requiere decisión de producto; mejoras de búsqueda), 5 ítems de deuda técnica menor (duplicados de reseñas sin constraint, componente sin uso, swatches de color, badges de pago, contenido hardcodeado del mega menú).
+Ver [`backlog.md`](./backlog.md) para el detalle completo. Estado al 2026-07-24: **1 bug activo** (`[BUG/ADMIN-INDEX]`, detectado 2026-07-12 — `count` incorrecto en `/admin/products` bajo filtros, bug de core de Medusa 2.15.2), varios ítems resueltos recientemente (rendimiento del storefront, galería compacta de PDP, feature completo de Zonas de entrega con su plan de cierre del 07-23/24, entre otros), features pendientes (combos de productos — plan guardado sin ejecutar; filtro de precio y 2x1/combos en PLP; tabs de PDP + Preguntas; bottom tab bar mobile; mejoras de búsqueda; `[UI/PEDIDOS]` sin migrar al diseño Rodi Mercado, hallazgo principal de la auditoría de "Mi cuenta"), y varios ítems de deuda técnica menor (duplicados de reseñas sin constraint, swatches de color, contenido hardcodeado del mega menú, mensajes de error poco descriptivos en Favoritos).
 
 **Actualización 2026-07-18 (Fase 11):** dentro de `[FEATURE/PLP-FILTROS]`, Atributos/Calificación/Promociones("En oferta")/chips de filtros activos quedan resueltos — solo Precio y 2x1/Combos (bloqueado por `[FEATURE/COMBOS]`) siguen pendientes de ese ítem. Se agregó un ítem nuevo, `[FEATURE/PLP-MAS-VENDIDOS]`, para el orden por ventas que se evaluó y se decidió no construir en esta pasada. Ver `backlog.md` y `plans/2026-07-18/FASE-11-plp-atributos-calificacion-promociones.md` para el detalle.
 

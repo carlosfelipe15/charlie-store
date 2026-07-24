@@ -34,6 +34,7 @@ cp apps/backend/.env.template apps/backend/.env
 | `JWT_SECRET` | Secreto JWT |
 | `COOKIE_SECRET` | Secreto de cookies |
 | `REDIS_URL` | Redis (opcional según módulos usados) |
+| `MEDUSA_FF_INDEX_ENGINE` | Activa el Index Module (`@medusajs/index`), necesario para `query.index()`. Ver advertencias sobre un bug de core asociado en [architecture.md](./architecture.md) y AGENTS.md |
 
 Valores por defecto del template apuntan a storefront en `http://localhost:8000` y admin en `http://localhost:9000`.
 
@@ -74,15 +75,19 @@ pnpm medusa db:migrate
 
 ### Seed de datos iniciales
 
-Existe un script de seed en `src/migration-scripts/initial-data-seed.ts` (regiones, productos de demo, etc.). Ejecútalo según la [documentación de Medusa para migration scripts](https://docs.medusajs.com) si necesitas datos de prueba.
-
-Desde la raíz también está disponible:
+No hay un único comando de seed — son varios scripts ejecutados con `medusa exec` desde `apps/backend`, cada uno con su propósito:
 
 ```bash
-pnpm backend:seed
+cd apps/backend
+pnpm medusa exec ./src/migration-scripts/initial-data-seed.ts  # regiones, productos de demo, geo-zone país "cu"
+pnpm medusa exec ./src/scripts/seed-mercado-catalog.ts          # catálogo "Rodi Mercado"
+pnpm medusa exec ./src/scripts/seed-zones.ts                    # 16 provincias / 168 municipios (idempotente)
+pnpm medusa exec ./src/scripts/seed-product-attributes.ts       # atributos/tags de PLP (Fase 11)
 ```
 
-(depende de la configuración del script `seed` en el paquete backend).
+`pnpm backend:seed` (raíz, `turbo seed --filter=@dtc/backend`) **no funciona hoy** — `apps/backend/package.json` no define ningún script `seed`; usar los comandos `medusa exec` de arriba.
+
+**Importante tras cualquiera de estos scripts**: `query.index()` puede quedar desincronizado con datos creados vía `medusa exec` (el proceso corto termina antes de que el Index Engine procese los eventos). Correr `pnpm medusa exec ./src/scripts/reindex-search.ts` después — ver sección "Índice de búsqueda cross-módulo" en [AGENTS.md](../AGENTS.md) para el detalle completo.
 
 ### Datos de prueba: Price List de oferta (para ver el flash sale del home)
 

@@ -24,7 +24,10 @@ src/app/
     │   ├── categories/[...category]/
     │   ├── cart/
     │   ├── account/               # Parallel routes @login / @dashboard
-    │   └── order/                 # Confirmación y transferencia
+    │   ├── order/                 # Confirmación y transferencia
+    │   ├── contact/
+    │   ├── content/[slug]/        # Páginas de contenido estático
+    │   └── design-system/         # Vitrina interna de componentes/tokens
     └── (checkout)/
         └── checkout/
 ```
@@ -78,16 +81,18 @@ Para llamar **rutas custom del backend** (ej. futuras APIs de brands en store), 
 
 `design-reference/` — mockups y canvas de diseño (“Rodi Mercado”, ecommerce-test). Referencia visual para futuras iteraciones de UI; **no** importar directamente en rutas de producción sin adaptar a `modules/` y tokens del proyecto.
 
-## Brands y Reviews en el storefront
+## Brands, Reviews, Favorites y Zones en el storefront
 
-Ambas features custom del backend ya están conectadas al storefront:
+Las cuatro features custom del backend ya están conectadas al storefront:
 
 | Feature | Datos | UI |
 |---------|-------|-----|
-| Brands | `lib/data/brands.ts`, `lib/util/product-brand.ts` | `modules/home/components/rodi-brands-strip/`, `modules/products/components/rodi-product-card/` |
+| Brands | `lib/data/brands.ts`, `lib/util/product-brand.ts` | `modules/home/components/rodi-brands-strip/`, `modules/products/components/rodi-product-card/`, checkboxes de marca en `modules/store/components/rodi-plp-filters/` (filtra `GET /store/products-list?brand_id=...`) |
 | Reviews | `lib/data/reviews.ts` | `modules/products/components/rodi-product-reviews/` (PDP), badge de rating en `modules/products/templates/product-info/`, stat sitewide en el panel de login (`account/@login`) |
+| Favorites | `lib/data/favorites.ts` | Toggle en `rodi-product-card` y `rodi-image-gallery` (PDP), ícono con badge en el header (`rodi-favorites-button`), página `/account/favorites` |
+| Zones ("Entregar en") | `lib/data/zones.ts` (cookie `_charlie_zone`) | `modules/layout/components/rodi-zone-picker/` (reemplaza al `CountrySelect` de país único), filtro `zone_id` en el catálogo, `modules/common/components/zone-conflict-dialog/` (aviso blando al cambiar de zona con carrito no vacío) |
 
-Detalle de cada una: [custom-features/brands.md](./custom-features/brands.md), [custom-features/reviews.md](./custom-features/reviews.md). Filtro por marca en el listado (PLP) todavía no existe — el backend ya expone `GET /store/brands` para eso.
+Detalle de cada una: [custom-features/brands.md](./custom-features/brands.md), [custom-features/reviews.md](./custom-features/reviews.md), [custom-features/favorites.md](./custom-features/favorites.md), [custom-features/zones.md](./custom-features/zones.md).
 
 ## Galería de imágenes en PDP: compacta vs. hero
 

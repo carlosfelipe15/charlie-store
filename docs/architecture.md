@@ -12,7 +12,8 @@ flowchart LR
   subgraph backend [Medusa Backend :9000]
     API[API Routes\nadmin + store]
     WF[Workflows]
-    MOD[Módulos custom\nBrand, Review]
+    MOD[Módulos custom\nBrand, Review, Favorite, Zone]
+    IDX[Index Engine\n@medusajs/index]
     CORE[Módulos Medusa\nProduct, Cart, Order...]
     DB[(PostgreSQL)]
   end
@@ -24,6 +25,8 @@ flowchart LR
   WF --> CORE
   MOD --> DB
   CORE --> DB
+  API -.->|query.index, solo brand_id| IDX
+  IDX --> DB
 ```
 
 ## Principio de capas (Medusa)
@@ -66,7 +69,9 @@ Turbo coordina `build`, `dev`, `lint`, `test` y `seed` sin imponer dependencias 
 
 - **Dentro del mismo módulo**: servicio del módulo (`listBrands`, `retrieveBrand`, …).
 - **Lectura con relaciones**: `req.scope.resolve("query").graph({ entity, fields, ... })`.
-- **Filtros entre módulos enlazados**: Index Module (`query.index`) cuando se necesite filtrar por campos de módulos linkados.
+- **Filtros entre módulos enlazados**: Index Module (`query.index`) cuando se necesite filtrar por campos de módulos linkados marcados `filterable` en su `defineLink` (hoy solo `product-brand.ts`).
+
+El módulo `@medusajs/index` está **registrado y activo** (`MEDUSA_FF_INDEX_ENGINE=true` en `.env`) — necesario para que `query.index()` funcione. **Advertencia**: en Medusa 2.15.2 activar este flag rompe el filtrado por `category_id`/`tag_id` en la ruta core `/store/products` (bug de Medusa, no de este repo), y no se puede overridear una ruta core solo con un `route.ts` de proyecto (los middlewares de core no se reemplazan, solo se concatenan). Por eso `apps/backend/src/api/store/products-list/route.ts` es una ruta **nueva** que solo usa `query.index()` para resolver ids y siempre hace el fetch final vía `query.graph()`. La mayoría de los filtros cross-módulo del repo (`zone_id`, `rating_gte`, `on_sale`) evitan el Index Engine por completo y resuelven con `query.graph()` + JS. Detalle completo: sección "Índice de búsqueda cross-módulo" en [AGENTS.md](../AGENTS.md).
 
 ## Extensión del core de Medusa
 

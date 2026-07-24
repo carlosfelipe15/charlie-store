@@ -5,7 +5,7 @@ Medusa v2 con admin embebido. Código fuente en `apps/backend/src/`.
 ## Configuración
 
 - **Entrada Medusa**: `medusa-config.ts`
-- **Módulos registrados**: array `modules[]` — actualmente incluye `./src/modules/brand` y `./src/modules/review`
+- **Módulos registrados**: array `modules[]` — actualmente incluye `./src/modules/brand`, `./src/modules/review`, `./src/modules/favorite`, `./src/modules/zone` y `@medusajs/index` (Index Engine, ver `docs/architecture.md`)
 - **Env**: `apps/backend/.env` (plantilla: `.env.template`)
 
 ## Árbol de directorios relevante
@@ -71,13 +71,16 @@ Centralizados en `api/middlewares.ts`:
 |------|-----------|--------|
 | Página | `admin/routes/brands/page.tsx` | `defineRouteConfig({ label, icon })` |
 | Widget | `admin/widgets/product-brand.tsx` | `defineWidgetConfig({ zone })` |
+| Widget | `admin/widgets/product-zones.tsx` | Zona `product.details.after` — asignación producto↔municipios (ver [custom-features/zones.md](./custom-features/zones.md)) |
 
 SDK admin: `admin/lib/sdk.ts` — `baseUrl` relativo `/` en dev (proxy Vite).
 
 ### Module link
 
-- `links/product-brand.ts`: producto (lista) ↔ marca (uno). Permite campos `products.*` y `brand.*` en `query.graph`.
+- `links/product-brand.ts`: producto (lista) ↔ marca (uno). Permite campos `products.*` y `brand.*` en `query.graph`; único link `filterable` (Index Engine).
 - `links/product-review.ts`: producto (uno) ↔ reseña (lista) — cardinalidad invertida respecto a brand, ver [custom-features/reviews.md](./custom-features/reviews.md#2-module-link).
+- `links/product-favorite.ts`: producto (uno) ↔ favorito (lista) — misma cardinalidad que `product-review.ts`, ver [custom-features/favorites.md](./custom-features/favorites.md).
+- `links/product-municipality.ts`: producto (lista) ↔ municipio (lista) — primer link N–M del repo (`isList: true` en ambos lados), deliberadamente **no** `filterable`, ver [custom-features/zones.md](./custom-features/zones.md).
 
 ## API custom actual
 
@@ -90,10 +93,19 @@ SDK admin: `admin/lib/sdk.ts` — `baseUrl` relativo `/` en dev (proxy Vite).
 | `GET` | `/store/brands` | Listado público de solo lectura |
 | `GET` | `/store/reviews` | Lista por `product_id` (opcional), paginado |
 | `POST` | `/store/reviews` | Requiere cliente autenticado; crea reseña + link vía workflow create-review |
+| `DELETE` | `/store/reviews/:id` | Solo el autor puede borrar su propia reseña |
 | `GET` | `/store/reviews/summary` | Agregado (promedio, conteo, distribución 1-5★); `product_id` opcional (sitewide si se omite) |
-| — | `/admin/custom`, `/store/custom` | Rutas placeholder del starter |
+| `GET` | `/store/favorites` | Requiere cliente autenticado; favoritos del cliente, excluye productos no publicados |
+| `POST` | `/store/favorites` | Requiere cliente autenticado; body `{ product_id }`, idempotente |
+| `DELETE` | `/store/favorites/:product_id` | Requiere cliente autenticado; idempotente |
+| `GET` | `/store/zones` | Listado público de provincias/municipios activos |
+| `POST` | `/store/zones/eligibility-check` | Público; body `{ zone_id, product_ids }` → `{ ineligible_product_ids }` |
+| `GET` | `/admin/zones` | Espejo admin de `/store/zones` |
+| `GET` | `/admin/products/:id/zones` | `{ municipality_ids }` asignados al producto |
+| `POST` | `/admin/products/:id/zones` | Reconciliación completa de links producto↔municipio |
+| — | `zone_id`, `brand_id`, `tag_id`, `rating_gte`, `on_sale` | Filtros combinables en `GET /store/products-list` (no rutas propias) |
 
-Detalle completo de cada feature: [custom-features/brands.md](./custom-features/brands.md), [custom-features/reviews.md](./custom-features/reviews.md).
+Detalle completo de cada feature: [custom-features/brands.md](./custom-features/brands.md), [custom-features/reviews.md](./custom-features/reviews.md), [custom-features/favorites.md](./custom-features/favorites.md), [custom-features/zones.md](./custom-features/zones.md).
 
 ## Hooks en workflows core
 
