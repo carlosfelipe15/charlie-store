@@ -140,6 +140,8 @@ La zona activa vive en la **cookie** `_charlie_zone`, no en la ruta — el país
 
 **`RodiZonePicker`** (`modules/layout/components/rodi-zone-picker/index.tsx`) — dropdown custom (Headless UI `Listbox`, no `<select>` nativo, por el estilo del chevron/popup) con dos niveles Provincia→Municipio, renderizado en dos variantes (`header` en desktop, `menu` en el side-menu mobile). **Reemplaza** al `CountrySelect` que existía antes de este feature (país único → ya no tiene sentido un selector de país en el header).
 
+**Selección de zona compartida (2026-07-25)**: la lógica de selección (estado de provincia/municipio, chequeo de elegibilidad, conflicto) vive en el hook `useZoneSelector` (`modules/layout/components/rodi-zone-picker/use-zone-selector.ts`), y el dropdown Provincia/Municipio en `modules/common/components/zone-select/index.tsx` (`ZoneSelect`, antes definido inline en `RodiZonePicker`). `RodiZonePicker` es un consumidor del hook; el otro consumidor es `ZonePickerModal` (ver más abajo) — la presentación (dropdown anclado vs. modal) queda fuera del hook, señalizada por el callback opcional `onZoneApplied`. `ZoneSelect` renderiza sus opciones en un portal (Headless UI v2 `anchor`) y el hook resincroniza `provinceId` cuando `activeZone` cambia desde otra instancia — ver "Fixes de UI del modal de la PDP" más abajo para el porqué de ambos.
+
 ### 9. Storefront — filtrado de catálogo por zona
 
 `lib/data/products.ts` (`listProducts`) pasa `zone_id` (la zona activa de la cookie) a `/store/products-list` salvo en fetches puntuales por `id`/`handle`. El componente `RodiZonePicker` no dispara el filtrado directamente — cambia la cookie + `revalidateTag("products")`, y el próximo render de cualquier página de listado ya pide con el `zone_id` nuevo.
@@ -172,6 +174,44 @@ Flujo: resuelve el municipio elegido (nombre de provincia/municipio del form →
 `modules/checkout/components/addresses/index.tsx` consume esto con `useActionState(setAddresses, {status:"idle"})` + `formRef`: input oculto `confirm_zone_change`, si `status === "zone-conflict"` muestra `ZoneConflictDialog`; al confirmar, pone el input oculto en `"true"` y hace `formRef.current?.requestSubmit()` en un `useEffect` (patrón de reenvío — no hay confirm nativo mid-submit con Server Actions/`useActionState` de React 19).
 
 **Carrito vacío tras confirmar (2026-07-24)**: si al confirmar el cambio de zona **todos** los ítems del carrito resultan no elegibles (se quitan todos, no solo algunos), continuar al paso de envío dejaría al cliente en un checkout sin nada que pagar. `setAddresses` detecta este caso (`cartEmptied`, releyendo el carrito con `retrieveCart` justo después de los `deleteLineItem`) y, en vez de guardar la dirección y seguir a `step=delivery`, sale del checkout por completo: `redirect("/cu/cart?zone_emptied=true")` (la cookie de zona igual se sincroniza — el cliente confirmó esa zona explícitamente). El querystring lo consume `modules/cart/components/zone-emptied-notice/index.tsx` (montado en `CartTemplate`), que en un `useEffect` muestra un toast explicando por qué el carrito quedó vacío y limpia el parámetro de la URL (`router.replace`). No hay forma de devolver este mensaje como estado de `useActionState` porque `redirect()` corta la ejecución antes de que el componente reciba nada — de ahí el flag en la URL en vez de un campo de `SetAddressesState`.
+
+## PDP: botón "Cambiar" de la tarjeta de envío (2026-07-25)
+
+Cierra `[UI/PDP-ENVIO]` de `.context/backlog.md` — el botón "Cambiar" de la tarjeta de envío de la PDP era un placeholder sin `onClick`.
+
+**Por qué no reutilizar el dropdown del header tal cual**: `RodiZonePicker` se posiciona `absolute` respecto a su propio botón trigger — anclarlo al botón "Cambiar", que vive mucho más abajo en la página (aside de la PDP), lo recortaría con el scroll. En su lugar, `modules/common/components/zone-picker-modal/index.tsx` (`ZonePickerModal`) renderiza la misma selección Provincia/Municipio dentro de un `Modal` (mismo componente común que usa `ZoneConflictDialog`), usando el mismo hook `useZoneSelector` — mismo comportamiento de conflicto de carrito que el picker del header, solo cambia la presentación.
+
+`modules/products/components/rodi-pdp-delivery/index.tsx` pasó de ser 100% estático a `"use client"`, recibe `zones`/`activeZone`/`cartItems` (mismo shape que `RodiHeader`, hilado desde `ProductTemplate`) y `isAvailable` (booleano — ¿*este* producto puntual está disponible en la zona activa?), y abre `ZonePickerModal` al click de "Cambiar". `isAvailable` se resuelve en `modules/products/templates/index.tsx` con el mismo endpoint compartido, acotado a un solo producto: `checkZoneEligibility(activeZone.id, [product.id])`. La tarjeta es dinámica:
+
+| Estado | Copy |
+|--------|------|
+| Sin zona activa | "Envío disponible" / "Elige tu zona para ver disponibilidad" (comportamiento original, sin cambios) |
+| Zona activa, producto disponible | "Envío disponible en {municipio}" / "Calculado en el checkout" |
+| Zona activa, producto **no** disponible | "No disponible en tu zona" (rojo) / "Elige otra zona para comprar este producto" |
+
+## Sincronizar la zona activa con la dirección del cliente al iniciar sesión (2026-07-25)
+
+Cierra el segundo pendiente listado en `.context/backlog.md`: un cliente con una dirección guardada que nunca tocó el picker navegaba zona-less indefinidamente, aunque su dirección default ya resuelve a una zona real.
+
+`lib/data/zones.ts::syncActiveZoneFromCustomerAddress(customer)` — llamada una sola vez, al final de `login()` en `lib/data/customer.ts` (después de `transferCart()`). Lógica:
+1. Si ya hay `getActiveZoneId()` (cookie presente), no hace nada — **nunca pisa una zona ya elegida**, propia o de un carrito de invitado.
+2. Toma la dirección `is_default_shipping` del cliente (o la primera si ninguna está marcada como default).
+3. Resuelve `province`/`city` contra `listZones()` (mismo matching por nombre que `setAddresses`).
+4. Si resuelve a un municipio real, `setActiveZone(municipalityId)`.
+
+**Deliberadamente silencioso** — no corre el chequeo de elegibilidad zona↔carrito que sí corren el picker y el checkout ante un cambio explícito. Si el carrito recién fusionado por `transferCart()` (justo antes, en el mismo `login()`) tiene ítems no disponibles en la zona inferida, eso no se detecta acá — se resuelve la próxima vez que el cliente toque el picker o llegue al checkout, igual que cualquier otro desajuste zona/carrito preexistente. Meter el diálogo de conflicto en medio del flujo de login hubiera sido más invasivo que lo que pedía este ítem. `login()` nunca falla por esto (`try/catch` silencioso alrededor de la llamada) — en el peor caso el cliente simplemente no recibe una zona pre-cargada y elige una manualmente, como cualquier invitado.
+
+Verificado en navegador: cuenta nueva con una dirección guardada (Playa, La Habana) → logout → cookie de zona borrada manualmente → login → header pasa de "Elige tu zona" a "Playa, La Habana" sin tocar el picker.
+
+## Fixes de UI del modal de la PDP (2026-07-28)
+
+A pedido de Carlos, tras usar el botón "Cambiar" de la PDP en la práctica. Los tres se verificaron en navegador (Playwright) uno por uno, con captura de pantalla para el primero.
+
+**Dropdown recortado por el modal**: `ZoneSelect` posicionaba su lista de opciones con `absolute` dentro del propio árbol DOM — dentro de `ZonePickerModal` (que usa el `Modal` común, con `overflow-hidden`/`overflow-y-auto` en sus contenedores), la lista quedaba recortada al alto visible del modal en vez de sobresalir como el resto de los desplegables del sitio. Fix: `ListboxOptions` pasa a usar el `anchor="bottom start"` de Headless UI v2, que la renderiza en un **portal** al final de `document.body`, posicionada con Floating UI relativa al botón — así escapa de cualquier ancestro con overflow, tanto en el modal de la PDP como en el dropdown del header (mismo componente, mismo fix para ambos). El ancho sigue matcheando el botón vía `w-[var(--button-width)]` (variable CSS que expone Headless UI en modo anchor) en vez del `w-full` relativo de antes.
+
+**Provincia marcada quedaba desincronizada entre instancias**: cada superficie del picker (el dropdown del header y el modal de la PDP) monta su propia instancia de `useZoneSelector`, cada una con su propio estado `provinceId` — seedeado una sola vez al montar. Si la zona cambiaba desde una instancia, la otra recibía el `activeZone` actualizado (el label "Entregar en"/"Envío disponible" se lee directo del prop, así que ese sí se veía bien) pero su `provinceId` interno quedaba congelado en lo último que *esa* instancia había mostrado — al reabrirla, aparecía la provincia vieja. Fix: `useZoneSelector` agregó un `useEffect` que resincroniza `provinceId` cada vez que cambia `activeZone?.id`, sin importar qué instancia disparó el cambio original. Verificado en ambas direcciones: cambiar desde el modal de la PDP y reabrir el dropdown del header (y viceversa) ya muestra la provincia correcta.
+
+**"Agregar al carrito" seguía habilitado con el producto no disponible en la zona**: cambiar de zona desde el botón "Cambiar" actualizaba el copy de la tarjeta de envío ("No disponible en tu zona") pero no tocaba en absoluto el botón de compra — ni el de escritorio (`ProductActions`) ni el de la barra fija mobile (`MobileActions`, que tiene su propio botón con su propia condición de `disabled`, independiente del de escritorio). Fix: nuevo prop `unavailableInZone` de punta a punta — `ProductTemplate` (que ya calculaba `isAvailableInActiveZone` para la tarjeta) lo pasa a `ProductActionsWrapper` → `ProductActions`, donde bloquea `canAdd` y cambia el label a "No disponible en tu zona"; `ProductActions` lo reenvía también a `MobileActions` para que su botón fijo quede igual de bloqueado. Verificado con "Medusa Shorts" (restringido a La Habana): botón deshabilitado con el label nuevo en Santiago de Cuba, vuelve a "Elige una opción" al volver a una zona donde el producto sí está disponible.
 
 ## Flujo de datos (diagrama)
 
@@ -211,8 +251,7 @@ sequenceDiagram
 | Tarifas/tiempos de envío diferenciados por provincia | Requiere decisión de negocio (matriz de tarifas) + guardar el código ISO en el envío del carrito sin romper la UI de dirección — ver `geo-zones-fulfillment.md` |
 | Asignación masiva de zona a varios productos a la vez | Hoy es un producto por vez desde el widget — análogo al mismo gap que tiene el widget de marca |
 | CRUD de Provincia/Municipio desde el admin | `createZonesWorkflow` ya existe (bulk-create); faltaría update/delete + rutas admin + UI, mismo patrón que `brand` |
-| Sincronizar la zona activa con la dirección default del cliente al iniciar sesión sin cookie | No implementado — hoy la cookie es la única fuente de la zona activa, un cliente logueado sin cookie no hereda su dirección guardada como zona |
-| Conectar el botón "Cambiar" de la tarjeta de envío de la PDP al picker | Ver `[UI/PDP-ENVIO]` en `.context/backlog.md` — placeholder sin `onClick` todavía |
+| Chequeo de elegibilidad zona↔carrito en `syncActiveZoneFromCustomerAddress` | Hoy es silencioso (ver sección de login) — si se quiere el mismo aviso blando que el picker/checkout ahí también, hace falta decidir la UX de un conflicto que aparece en medio del login |
 
 ## Archivos (mapa rápido)
 
@@ -243,9 +282,17 @@ apps/backend/src/
 └── admin/widgets/product-zones.tsx
 
 apps/storefront/src/
-├── lib/data/zones.ts
+├── lib/data/zones.ts              # incl. syncActiveZoneFromCustomerAddress
+├── lib/data/customer.ts           # login() llama a la sync de arriba
 ├── modules/layout/components/rodi-zone-picker/
+│   ├── index.tsx                  # consumidor "header/menu" del hook
+│   └── use-zone-selector.ts       # hook compartido (selección + conflicto)
+├── modules/common/components/zone-select/            # <select> compartido (Listbox)
+├── modules/common/components/zone-picker-modal/       # consumidor "modal" del hook (PDP)
 ├── modules/common/components/zone-conflict-dialog/
+├── modules/products/components/rodi-pdp-delivery/     # tarjeta dinámica + botón "Cambiar"
+├── modules/products/templates/index.tsx               # fetch de zones/activeZone/cartItems/isAvailable
+├── modules/cart/components/zone-emptied-notice/        # toast tras vaciar el carrito en checkout
 ├── modules/checkout/components/addresses/index.tsx     # setAddresses + diálogo
 ├── modules/checkout/components/shipping-address/index.tsx
 └── lib/data/cart.ts              # setAddresses, SetAddressesState
