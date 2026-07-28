@@ -17,6 +17,9 @@ type ProductActionsProps = {
   product: HttpTypes.StoreProduct
   region: HttpTypes.StoreRegion
   disabled?: boolean
+  /** Product isn't available in the customer's active delivery zone — blocks
+   * adding to cart regardless of variant/stock, with its own label. */
+  unavailableInZone?: boolean
 }
 
 const optionsAsKeymap = (
@@ -31,6 +34,7 @@ const optionsAsKeymap = (
 export default function ProductActions({
   product,
   disabled,
+  unavailableInZone,
 }: ProductActionsProps) {
   const router = useRouter()
   const pathname = usePathname()
@@ -125,6 +129,9 @@ export default function ProductActions({
   }
 
   const addLabel = useMemo(() => {
+    if (unavailableInZone) {
+      return "No disponible en tu zona"
+    }
     if (!selectedVariant && Object.keys(options).length === 0) {
       return "Elige una opción"
     }
@@ -132,13 +139,14 @@ export default function ProductActions({
       return "Agotado"
     }
     return "Agregar al carrito"
-  }, [selectedVariant, options, inStock, isValidVariant])
+  }, [unavailableInZone, selectedVariant, options, inStock, isValidVariant])
 
   const canAdd =
     inStock &&
     !!selectedVariant &&
     isValidVariant &&
     !disabled &&
+    !unavailableInZone &&
     !isAdding
 
   return (
@@ -191,6 +199,7 @@ export default function ProductActions({
           isAdding={isAdding}
           show={!inView}
           optionsDisabled={!!disabled || isAdding}
+          unavailableInZone={unavailableInZone}
         />
       </div>
     </>

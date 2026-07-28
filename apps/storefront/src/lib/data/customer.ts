@@ -14,6 +14,7 @@ import {
   removeCartId,
   setAuthToken,
 } from "./cookies"
+import { syncActiveZoneFromCustomerAddress } from "./zones"
 
 export const retrieveCustomer =
   async (): Promise<HttpTypes.StoreCustomer | null> => {
@@ -124,6 +125,15 @@ export async function login(_currentState: unknown, formData: FormData) {
     await transferCart()
   } catch (error) {
     return String(error)
+  }
+
+  // Best-effort: a customer who never picked a delivery zone shouldn't stay
+  // zone-less forever just because they logged in instead of using the
+  // picker. Never blocks login on failure.
+  try {
+    await syncActiveZoneFromCustomerAddress(await retrieveCustomer())
+  } catch {
+    // no-op
   }
 }
 

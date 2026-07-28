@@ -1,101 +1,13 @@
 "use client"
 
-import { useMemo, useState, useTransition } from "react"
-import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { clsx } from "clsx"
-import {
-  Listbox,
-  ListboxButton,
-  ListboxOption,
-  ListboxOptions,
-} from "@headlessui/react"
 
 import { RodiIconChevron, RodiIconPin } from "@modules/common/icons/rodi"
-import {
-  checkZoneEligibility,
-  setActiveZone,
-  type ActiveZone,
-  type ZoneCartItem,
-  type ZoneProvince,
-} from "@lib/data/zones"
-import { deleteLineItem } from "@lib/data/cart"
+import type { ActiveZone, ZoneCartItem, ZoneProvince } from "@lib/data/zones"
 import ZoneConflictDialog from "@modules/common/components/zone-conflict-dialog"
-
-type ZoneOption = { id: string; name: string }
-
-/**
- * Custom dropdown (Headless UI Listbox) used for both Provincia and Municipio.
- * Native <select> can't do what's needed here: a chevron inset from the right
- * edge, rotating up on open, and an options popup that matches the trigger width.
- */
-const ZoneSelect = ({
-  value,
-  onChange,
-  options,
-  placeholder,
-  disabled,
-  testId,
-}: {
-  value: string
-  onChange: (id: string) => void
-  options: ZoneOption[]
-  placeholder: string
-  disabled?: boolean
-  testId?: string
-}) => {
-  const selected = options.find((o) => o.id === value)
-
-  return (
-    <Listbox value={value} onChange={onChange} disabled={disabled}>
-      {({ open }) => (
-        <div className="relative">
-          <ListboxButton
-            className={clsx(
-              "flex w-full items-center justify-between rounded-rm-md border border-rm-line bg-white",
-              // extra right padding so the chevron sits inset from the edge
-              "py-2 pl-3 pr-3 text-sm text-left",
-              "focus:outline-none focus-visible:ring-2 focus-visible:ring-rm-red",
-              "disabled:opacity-50 disabled:cursor-not-allowed"
-            )}
-            data-testid={testId}
-          >
-            <span className={clsx("truncate", selected ? "text-rm-ink" : "text-rm-ink-2")}>
-              {selected ? selected.name : placeholder}
-            </span>
-            <span className="ml-2 shrink-0 text-rm-ink-2">
-              <RodiIconChevron size={14} chevronDirection={open ? "up" : "down"} />
-            </span>
-          </ListboxButton>
-
-          <ListboxOptions
-            className={clsx(
-              // w-full => options popup matches the trigger width (both selects
-              // share the same panel width, so Provincia and Municipio match)
-              "absolute left-0 z-[901] mt-1 max-h-60 w-full overflow-auto",
-              "rounded-rm-md border border-rm-line bg-white py-1 shadow-lg focus:outline-none"
-            )}
-          >
-            {options.map((option) => (
-              <ListboxOption
-                key={option.id}
-                value={option.id}
-                className={({ focus, selected: isSelected }) =>
-                  clsx(
-                    "cursor-pointer px-3 py-2 text-sm text-rm-ink",
-                    focus && "bg-rm-paper",
-                    isSelected && "font-semibold"
-                  )
-                }
-              >
-                {option.name}
-              </ListboxOption>
-            ))}
-          </ListboxOptions>
-        </div>
-      )}
-    </Listbox>
-  )
-}
+import ZoneSelect from "@modules/common/components/zone-select"
+import { useZoneSelector } from "./use-zone-selector"
 
 type RodiZonePickerProps = {
   zones: ZoneProvince[]
@@ -114,80 +26,27 @@ const RodiZonePicker = ({
   variant = "header",
 }: RodiZonePickerProps) => {
   const [open, setOpen] = useState(false)
-  const [provinceId, setProvinceId] = useState<string>(
-    () => zones.find((p) => p.name === activeZone?.provinceName)?.id ?? ""
-  )
-  const [pending, startTransition] = useTransition()
-  const [conflict, setConflict] = useState<{
-    municipalityId: string
-    items: { id: string; title: string; thumbnail: string | null }[]
-  } | null>(null)
-  const router = useRouter()
 
-  const municipalities = useMemo(
-    () => zones.find((p) => p.id === provinceId)?.municipalities ?? [],
-    [zones, provinceId]
-  )
+  const {
+    provinceId,
+    setProvinceId,
+    municipalities,
+    municipalityValue,
+    pending,
+    conflict,
+    handleMunicipalityChange,
+    confirmZoneChange,
+    cancelConflict,
+  } = useZoneSelector({
+    zones,
+    activeZone,
+    cartItems,
+    onZoneApplied: () => setOpen(false),
+  })
 
   const label = activeZone
     ? `${activeZone.name}, ${activeZone.provinceName}`
     : "Elige tu zona"
-
-  const municipalityValue =
-    activeZone && municipalities.some((m) => m.id === activeZone.id)
-      ? activeZone.id
-      : ""
-
-  const applyZoneChange = (municipalityId: string) => {
-    startTransition(async () => {
-      await setActiveZone(municipalityId)
-      setOpen(false)
-      setConflict(null)
-      router.refresh()
-    })
-  }
-
-  const handleMunicipalityChange = (municipalityId: string) => {
-    if (!municipalityId) {
-      return
-    }
-
-    if (!cartItems.length) {
-      applyZoneChange(municipalityId)
-      return
-    }
-
-    startTransition(async () => {
-      const ineligible = await checkZoneEligibility(
-        municipalityId,
-        cartItems.map((item) => item.product_id)
-      )
-
-      if (!ineligible.length) {
-        applyZoneChange(municipalityId)
-        return
-      }
-
-      const affected = cartItems.filter((item) =>
-        ineligible.includes(item.product_id)
-      )
-      setConflict({ municipalityId, items: affected })
-    })
-  }
-
-  const confirmZoneChange = () => {
-    if (!conflict) {
-      return
-    }
-    const { municipalityId, items } = conflict
-    startTransition(async () => {
-      await Promise.all(items.map((item) => deleteLineItem(item.id)))
-      await setActiveZone(municipalityId)
-      setOpen(false)
-      setConflict(null)
-      router.refresh()
-    })
-  }
 
   const isMenu = variant === "menu"
 
@@ -276,7 +135,7 @@ const RodiZonePicker = ({
         items={conflict?.items ?? []}
         pending={pending}
         onConfirm={confirmZoneChange}
-        onCancel={() => setConflict(null)}
+        onCancel={cancelConflict}
       />
     </div>
   )

@@ -2,6 +2,7 @@
 
 import { cookies as nextCookies } from "next/headers"
 import { revalidateTag } from "next/cache"
+import { HttpTypes } from "@medusajs/types"
 
 import { sdk } from "@lib/config"
 import { getCacheOptions, getCacheTag } from "./cookies"
@@ -113,4 +114,43 @@ export const checkZoneEligibility = async (
     })
     .then((r) => r.ineligible_product_ids ?? [])
     .catch(() => [])
+}
+
+/**
+ * Infers the active "Entregar en" zone from the customer's default shipping
+ * address the moment they log in with no zone cookie set yet — otherwise a
+ * returning customer who never touched the picker browses zone-less despite
+ * having a real address on file. Called once, from `login()`. Never
+ * overrides a zone that's already set (their own past choice, or a guest's)
+ * — this only fills a gap, it doesn't second-guess an explicit selection.
+ *
+ * Deliberately silent: doesn't run the zone↔cart eligibility check that the
+ * picker/checkout do on an explicit change. If the cart (just merged in by
+ * `transferCart()`) has items unavailable in the inferred zone, that surfaces
+ * the next time the customer touches the picker or reaches checkout, same as
+ * any other pre-existing zone/cart mismatch — see `docs/custom-features/zones.md`.
+ */
+export const syncActiveZoneFromCustomerAddress = async (
+  customer: HttpTypes.StoreCustomer | null
+): Promise<void> => {
+  if (await getActiveZoneId()) {
+    return
+  }
+
+  const address =
+    customer?.addresses?.find((a) => a.is_default_shipping) ??
+    customer?.addresses?.[0]
+
+  if (!address?.province || !address?.city) {
+    return
+  }
+
+  const provinces = await listZones()
+  const municipalityId = provinces
+    .find((province) => province.name === address.province)
+    ?.municipalities.find((m) => m.name === address.city)?.id
+
+  if (municipalityId) {
+    await setActiveZone(municipalityId)
+  }
 }

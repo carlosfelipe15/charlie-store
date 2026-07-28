@@ -1,6 +1,8 @@
 import { Suspense } from "react"
 
 import { getFavoritedProductIds } from "@lib/data/favorites"
+import { retrieveCart } from "@lib/data/cart"
+import { checkZoneEligibility, getActiveZone, listZones } from "@lib/data/zones"
 import RodiBreadcrumbs from "@modules/products/components/rodi-breadcrumbs"
 import RodiImageGallery from "@modules/products/components/rodi-image-gallery"
 import ProductActions from "@modules/products/components/product-actions"
@@ -37,6 +39,30 @@ async function ProductTemplate({
   const favoritedProductIds = await getFavoritedProductIds()
   const isFavorited = favoritedProductIds.has(product.id)
   const compactGallery = shouldUseCompactGallery(product)
+
+  const [zones, activeZone, cart] = await Promise.all([
+    listZones(),
+    getActiveZone(),
+    retrieveCart().catch(() => null),
+  ])
+
+  // Same shape RodiHeader derives for the "Entregar en" picker — reused here
+  // so the PDP's zone modal shares the exact same zone↔cart soft-warning.
+  const cartItems =
+    cart?.items
+      ?.filter((item) => !!item.product_id)
+      .map((item) => ({
+        id: item.id,
+        product_id: item.product_id as string,
+        title: item.product_title ?? item.title,
+        thumbnail: item.thumbnail ?? null,
+      })) ?? []
+
+  // Only this product's availability in the active zone — not the whole
+  // catalog, and not needed at all when no zone is set yet.
+  const isAvailableInActiveZone = activeZone
+    ? (await checkZoneEligibility(activeZone.id, [product.id])).length === 0
+    : true
 
   const breadcrumbItems = [
     { label: "Inicio", href: "/" },
@@ -88,9 +114,18 @@ async function ProductTemplate({
                 />
               }
             >
-              <ProductActionsWrapper id={product.id} region={region} />
+              <ProductActionsWrapper
+                id={product.id}
+                region={region}
+                unavailableInZone={!!activeZone && !isAvailableInActiveZone}
+              />
             </Suspense>
-            <RodiPdpDelivery />
+            <RodiPdpDelivery
+              zones={zones}
+              activeZone={activeZone}
+              cartItems={cartItems}
+              isAvailable={isAvailableInActiveZone}
+            />
           </aside>
         </main>
 

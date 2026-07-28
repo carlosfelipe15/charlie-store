@@ -23,6 +23,7 @@ type MobileActionsProps = {
   isAdding?: boolean
   show: boolean
   optionsDisabled: boolean
+  unavailableInZone?: boolean
 }
 
 const MobileActions: React.FC<MobileActionsProps> = ({
@@ -35,6 +36,7 @@ const MobileActions: React.FC<MobileActionsProps> = ({
   isAdding,
   show,
   optionsDisabled,
+  unavailableInZone,
 }) => {
   const { state, open, close } = useToggleState()
 
@@ -124,17 +126,19 @@ const MobileActions: React.FC<MobileActionsProps> = ({
                 kind="primary"
                 fullWidth
                 onClick={handleAddToCart}
-                disabled={!inStock || !variant}
+                disabled={unavailableInZone || !inStock || !variant}
                 data-testid="mobile-cart-button"
               >
                 <RodiIconCart size={16} />
-                {!variant
-                  ? "Elegir opción"
-                  : !inStock
-                    ? "Agotado"
-                    : isAdding
-                      ? "Agregando…"
-                      : "Agregar al carrito"}
+                {unavailableInZone
+                  ? "No disponible en tu zona"
+                  : !variant
+                    ? "Elegir opción"
+                    : !inStock
+                      ? "Agotado"
+                      : isAdding
+                        ? "Agregando…"
+                        : "Agregar al carrito"}
               </RodiBtn>
             </div>
           </div>
