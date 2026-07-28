@@ -36,8 +36,6 @@ const BillingAddress = ({
       "",
     "billing_address.address_1":
       cart?.billing_address?.address_1 || profileAddress?.address_1 || "",
-    "billing_address.company":
-      cart?.billing_address?.company || profileAddress?.company || "",
     "billing_address.postal_code":
       cart?.billing_address?.postal_code || profileAddress?.postal_code || "",
     "billing_address.city":
@@ -97,14 +95,6 @@ const BillingAddress = ({
           onChange={handleChange}
           required
           data-testid="billing-address-input"
-        />
-        <Input
-          label="Empresa"
-          name="billing_address.company"
-          value={formData["billing_address.company"]}
-          onChange={handleChange}
-          autoComplete="organization"
-          data-testid="billing-company-input"
         />
         <Input
           label="Código postal"
