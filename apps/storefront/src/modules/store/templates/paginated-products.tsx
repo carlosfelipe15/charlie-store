@@ -8,7 +8,7 @@ import { RodiPagination } from "@modules/store/components/rodi-pagination"
 import RodiPlpToolbar from "@modules/store/components/rodi-plp-toolbar"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
-const PRODUCT_LIMIT = 12
+const PRODUCT_LIMIT = 20
 
 type PaginatedProductsParams = {
   limit: number
@@ -53,7 +53,7 @@ export default async function PaginatedProducts({
   tags?: StoreTag[]
 }) {
   const queryParams: PaginatedProductsParams = {
-    limit: 12,
+    limit: PRODUCT_LIMIT,
   }
 
   if (query?.trim()) {
