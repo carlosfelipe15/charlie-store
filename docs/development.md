@@ -46,6 +46,8 @@ pnpm medusa db:migrate
 pnpm medusa user -e admin@test.com -p <tu-password>
 ```
 
+Alternativa: `initial-data-seed.ts` (ver [Seed de datos iniciales](#seed-de-datos-iniciales) más abajo) ya crea un admin de prueba con credenciales fijas — si vas a correr los seeds igual, no hace falta el comando `medusa user` de arriba.
+
 ### Arranque
 
 ```bash
@@ -79,7 +81,7 @@ No hay un único comando de seed — son varios scripts ejecutados con `medusa e
 
 ```bash
 cd apps/backend
-pnpm medusa exec ./src/migration-scripts/initial-data-seed.ts  # regiones, productos de demo, geo-zone país "cu"
+pnpm medusa exec ./src/migration-scripts/initial-data-seed.ts  # regiones, productos de demo, geo-zone país "cu", admin de prueba
 pnpm medusa exec ./src/scripts/seed-mercado-catalog.ts          # catálogo "Rodi Mercado"
 pnpm medusa exec ./src/scripts/seed-zones.ts                    # 16 provincias / 168 municipios (idempotente)
 pnpm medusa exec ./src/scripts/seed-product-attributes.ts       # atributos/tags de PLP (Fase 11)
@@ -88,6 +90,17 @@ pnpm medusa exec ./src/scripts/seed-product-attributes.ts       # atributos/tags
 `pnpm backend:seed` (raíz, `turbo seed --filter=@dtc/backend`) **no funciona hoy** — `apps/backend/package.json` no define ningún script `seed`; usar los comandos `medusa exec` de arriba.
 
 **Importante tras cualquiera de estos scripts**: `query.index()` puede quedar desincronizado con datos creados vía `medusa exec` (el proceso corto termina antes de que el Index Engine procese los eventos). Correr `pnpm medusa exec ./src/scripts/reindex-search.ts` después — ver sección "Índice de búsqueda cross-módulo" en [AGENTS.md](../AGENTS.md) para el detalle completo.
+
+#### Admin de prueba
+
+`initial-data-seed.ts` crea, además de regiones/productos/geo-zona, un usuario admin fijo para poder probar cualquier flujo del admin (`http://localhost:9000/app`) sin correr `medusa user` a mano:
+
+| Campo | Valor |
+|-------|-------|
+| Email | `admin@charliestore.test` |
+| Password | `CharlieAdmin123!` |
+
+Solo para desarrollo local — no correr este seed contra una base de datos de producción. Si el seed se re-corre sobre una base que ya tiene ese email registrado, `authModuleService.register` devuelve error (logueado como warning) y el resto del seed continúa sin romperse; no es idempotente en el sentido de "actualiza el usuario existente", así que si necesitás resetear la password de este usuario es más rápido hacerlo desde el Admin o con `pnpm medusa user` apuntando al mismo email.
 
 ### Datos de prueba: Price List de oferta (para ver el flash sale del home)
 

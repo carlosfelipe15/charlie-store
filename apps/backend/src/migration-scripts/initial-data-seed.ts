@@ -18,9 +18,16 @@ import {
   createStockLocationsWorkflow,
   createStoresWorkflow,
   createTaxRegionsWorkflow,
+  createUsersWorkflow,
   linkSalesChannelsToApiKeyWorkflow,
   linkSalesChannelsToStockLocationWorkflow,
 } from "@medusajs/medusa/core-flows";
+
+// Test admin credentials, seeded so any agent/dev can log into /app without
+// running `medusa user` by hand. Documented in docs/development.md — keep
+// both in sync if you change these. Dev-only data, never used in prod seeds.
+const TEST_ADMIN_EMAIL = "admin@charliestore.test";
+const TEST_ADMIN_PASSWORD = "CharlieAdmin123!";
 
 export default async function initial_data_seed({
   container,
@@ -33,9 +40,10 @@ export default async function initial_data_seed({
   const fulfillmentModuleService = container.resolve(
     ModuleRegistrationName.FULFILLMENT
   );
+  const authModuleService = container.resolve(Modules.AUTH);
 
   // Single-country store: Cuba. The delivery-zone feature (Province/Municipality,
-  // see .context/plan-zonas-entrega-provincia-municipio.md) is modeled on top of
+  // see .context/plans/2026-07-19/plan-zonas-entrega-provincia-municipio.md) is modeled on top of
   // this single region, NOT by turning provinces into regions. Currency stays
   // EUR/USD (CUP is not used) — see the store supported_currencies below.
   const countries = ["cu"];
@@ -168,7 +176,7 @@ export default async function initial_data_seed({
         // Country-level `cu` geo zone only — the robust gate that gets any
         // Cuban address the flat shipping options. Delivery is flat and
         // covers all Cuba (Fase C decision,
-        // .context/plan-zonas-entrega-provincia-municipio.md).
+        // .context/plans/2026-07-19/plan-zonas-entrega-provincia-municipio.md).
         //
         // Province-level geo zones were tried here (ISO 3166-2:CU codes) but
         // removed: they lived in this SAME service zone as the country geo
@@ -935,4 +943,48 @@ export default async function initial_data_seed({
   });
 
   logger.info("Finished seeding inventory levels data.");
+
+  logger.info("Seeding test admin user...");
+  // Mirrors what `medusa user -e ... -p ...` does under the hood (see
+  // @medusajs/medusa/dist/commands/user.js): create the user record via the
+  // create-users workflow, register an emailpass auth identity, then link
+  // the two via app_metadata.user_id.
+  const { result: adminUsers } = await createUsersWorkflow(container).run({
+    input: {
+      users: [
+        {
+          email: TEST_ADMIN_EMAIL,
+          first_name: "Admin",
+          last_name: "Prueba",
+        },
+      ],
+    },
+  });
+  const testAdminUser = adminUsers[0];
+
+  const { authIdentity, error: authError } = await authModuleService.register(
+    "emailpass",
+    {
+      body: {
+        email: TEST_ADMIN_EMAIL,
+        password: TEST_ADMIN_PASSWORD,
+      },
+    }
+  );
+
+  if (authError) {
+    logger.warn(
+      `No se pudo registrar el auth identity del admin de prueba (¿ya existía?): ${authError}`
+    );
+  } else {
+    await authModuleService.updateAuthIdentities({
+      id: authIdentity!.id,
+      app_metadata: {
+        user_id: testAdminUser.id,
+      },
+    });
+    logger.info(
+      `Admin de prueba listo — email: ${TEST_ADMIN_EMAIL} / password: ${TEST_ADMIN_PASSWORD} (ver docs/development.md)`
+    );
+  }
 }
