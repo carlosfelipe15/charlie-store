@@ -1,8 +1,7 @@
-import { Button } from "@modules/common/components/ui"
+import { RodiBtnLink } from "@modules/common/components/rodi"
 import { useMemo } from "react"
 
 import Thumbnail from "@modules/products/components/thumbnail"
-import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
 
@@ -30,7 +29,11 @@ const OrderCard = ({ order }: OrderCardProps) => {
       </div>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-rm-ink-2">
         <span className="pr-2" data-testid="order-created-at">
-          {new Date(order.created_at).toDateString()}
+          {new Date(order.created_at).toLocaleDateString("es-CO", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })}
         </span>
         <span className="px-2" data-testid="order-amount">
           {convertToLocale({
@@ -47,13 +50,13 @@ const OrderCard = ({ order }: OrderCardProps) => {
           return (
             <div
               key={i.id}
-              className="flex flex-col gap-y-2"
+              className="flex flex-col gap-y-2 max-w-[50%]"
               data-testid="order-item"
             >
               <Thumbnail thumbnail={i.thumbnail} images={[]} size="full" />
-              <div className="flex items-center text-small-regular text-ui-fg-base">
+              <div className="flex items-center text-small-regular text-rm-ink">
                 <span
-                  className="text-ui-fg-base font-semibold"
+                  className="text-rm-ink font-semibold"
                   data-testid="item-title"
                 >
                   {i.title}
@@ -66,19 +69,22 @@ const OrderCard = ({ order }: OrderCardProps) => {
         })}
         {numberOfProducts > 4 && (
           <div className="w-full h-full flex flex-col items-center justify-center">
-            <span className="text-small-regular text-ui-fg-base">
+            <span className="text-small-regular text-rm-ink">
               + {numberOfLines - 4}
             </span>
-            <span className="text-small-regular text-ui-fg-base">more</span>
+            <span className="text-small-regular text-rm-ink">más</span>
           </div>
         )}
       </div>
       <div className="flex justify-end">
-        <LocalizedClientLink href={`/account/orders/details/${order.id}`}>
-          <Button data-testid="order-details-link" variant="secondary">
-            See details
-          </Button>
-        </LocalizedClientLink>
+        <RodiBtnLink
+          href={`/account/orders/details/${order.id}`}
+          kind="ghost"
+          size="sm"
+          data-testid="order-details-link"
+        >
+          Ver detalles
+        </RodiBtnLink>
       </div>
     </div>
   )
