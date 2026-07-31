@@ -142,6 +142,18 @@ Detalle completo: [docs/custom-features/favorites.md](docs/custom-features/favor
 
 Detalle completo: [docs/custom-features/zones.md](docs/custom-features/zones.md).
 
+**Best Sellers** ("Más vendidos") — sort nuevo en el PLP, backend reutilizable, sin admin UI (no hay caso de uso de moderación, los conteos se recalculan solos):
+- Módulo: `apps/backend/src/modules/product-sales-count/` — modelo `ProductSalesCount` (`product_id` único, `units_sold`, `last_calculated_at`)
+- Link producto↔conteo: `apps/backend/src/links/product-sales-count.ts` (**1:1**, sin `isList` en ningún lado — a diferencia de todos los links anteriores)
+- Helper reutilizable: `modules/product-sales-count/utils/get-product-sales-ranking.ts` (`getProductSalesRanking` + `rankProductIds`, esta última pura y testeada) — cualquier feature futura (home, admin, badge de PDP) lo importa directo en vez de reimplementar el ranking
+- Agregación: `modules/product-sales-count/utils/compute-units-sold.ts` (`SUM(quantity)` por producto desde `order`, excluye `status: canceled`; **incluye** `pending` — el estado real de un checkout en Medusa v2, nunca `completed`)
+- Workflow: `workflows/upsert-product-sales-counts.ts` + steps `find-existing-product-sales-counts.ts`/`upsert-product-sales-counts.ts` — recompute **completo** cada corrida (no incremental), autocorrige a 0 las filas que dejaron de tener ventas
+- Job: `jobs/recompute-product-sales-counts.ts`, cron diario (`0 3 * * *`)
+- API store: `sort_by=best_selling` en `GET /store/products-list` (paginación real sobre el universo ya filtrado por marca/tag/rating/on_sale/zona, no una ventana en memoria)
+- Storefront: opción "Más vendidos" en el selector de orden del PLP (`rodi-plp-toolbar/rodi-sort-select.tsx`, `refinement-list/sort-products`)
+
+Detalle completo: [docs/custom-features/best-sellers.md](docs/custom-features/best-sellers.md).
+
 **Nota**: al registrar un módulo nuevo en `medusa-config.ts` o crear/editar un archivo en `src/links/`, reiniciar `medusa develop` completo — no recarga en caliente.
 
 ## Dónde colocar código nuevo
