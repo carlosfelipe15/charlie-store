@@ -194,6 +194,20 @@ export const listProductsWithSort = async ({
   const limit = queryParams?.limit || 12
   const pageNumber = Math.max(page, 1)
 
+  if (sortBy === "best_selling") {
+    // Backend-ranked (product_sales_count table) — real pagination, not a
+    // memory window, since that table is cheap to rank in full server-side.
+    return listProducts({
+      pageParam: pageNumber,
+      queryParams: {
+        ...queryParams,
+        limit,
+        sort_by: "best_selling",
+      } as HttpTypes.FindParams & HttpTypes.StoreProductListParams,
+      countryCode,
+    })
+  }
+
   if (sortBy !== "price_asc" && sortBy !== "price_desc") {
     // created_at (default): true backend pagination, newest first.
     return listProducts({

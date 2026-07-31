@@ -16,6 +16,7 @@ import {
 } from "@modules/common/icons/rodi"
 
 const sortLabels: Record<SortOptions, string> = {
+  best_selling: "Más vendidos",
   created_at: "Más recientes",
   price_asc: "Menor precio",
   price_desc: "Mayor precio",
