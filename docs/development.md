@@ -85,11 +85,10 @@ pnpm medusa exec ./src/migration-scripts/initial-data-seed.ts  # regiones, produ
 pnpm medusa exec ./src/scripts/seed-mercado-catalog.ts          # catálogo "Rodi Mercado"
 pnpm medusa exec ./src/scripts/seed-zones.ts                    # 16 provincias / 168 municipios (idempotente)
 pnpm medusa exec ./src/scripts/seed-product-attributes.ts       # atributos/tags de PLP (Fase 11)
+pnpm medusa exec ./src/scripts/seed-promotions.ts                # price list de oferta + cupones de demo
 ```
 
 `pnpm backend:seed` (raíz, `turbo seed --filter=@dtc/backend`) **no funciona hoy** — `apps/backend/package.json` no define ningún script `seed`; usar los comandos `medusa exec` de arriba.
-
-**Importante tras cualquiera de estos scripts**: `query.index()` puede quedar desincronizado con datos creados vía `medusa exec` (el proceso corto termina antes de que el Index Engine procese los eventos). Correr `pnpm medusa exec ./src/scripts/reindex-search.ts` después — ver sección "Índice de búsqueda cross-módulo" en [AGENTS.md](../AGENTS.md) para el detalle completo.
 
 #### Admin de prueba
 
@@ -102,14 +101,16 @@ pnpm medusa exec ./src/scripts/seed-product-attributes.ts       # atributos/tags
 
 Solo para desarrollo local — no correr este seed contra una base de datos de producción. Si el seed se re-corre sobre una base que ya tiene ese email registrado, `authModuleService.register` devuelve error (logueado como warning) y el resto del seed continúa sin romperse; no es idempotente en el sentido de "actualiza el usuario existente", así que si necesitás resetear la password de este usuario es más rápido hacerlo desde el Admin o con `pnpm medusa user` apuntando al mismo email.
 
-### Datos de prueba: Price List de oferta (para ver el flash sale del home)
+**Importante tras cualquiera de estos scripts**: `query.index()` puede quedar desincronizado con datos creados vía `medusa exec` (el proceso corto termina antes de que el Index Engine procese los eventos). Correr `pnpm medusa exec ./src/scripts/reindex-search.ts` después — ver sección "Índice de búsqueda cross-módulo" en [AGENTS.md](../AGENTS.md) para el detalle completo.
 
-`rodi-flash-sale` y `rodi-curated-row` (home del storefront) se ocultan por completo cuando no hay productos con un precio de oferta activo — es el comportamiento esperado, no un bug (ver `.context/backlog.md`, sección "Resueltos Recientemente"). El seed inicial no crea ninguna Price List de tipo oferta, así que localmente esa sección aparece vacía salvo que la crees a mano:
+### Datos de prueba: promociones y ofertas de demostración
 
-1. Entra al Admin (`http://localhost:9000/app`) → **Settings → Price Lists → New**.
-2. Tipo: **Sale**. Define un rango de vigencia que incluya la fecha actual.
-3. Agrega uno o más productos/variantes con un precio menor al precio por defecto.
-4. Guarda y recarga `http://localhost:8000/es` — la franja de flash sale debería aparecer con el countdown.
+`seed-promotions.ts` (idempotente, seguro de re-correr) crea:
+
+- Una **Price List** de tipo `sale` ("Ofertas relámpago", 25% off) sobre un subconjunto fijo de 6 productos — es lo que necesitan `rodi-flash-sale`/`rodi-curated-row` (home) y el filtro `on_sale` de la PLP (Fase 11) para dejar de renderizar vacío. Sin esto, esas secciones se ocultan por completo — comportamiento esperado, no un bug (ver `.context/backlog.md`, sección "Resueltos Recientemente").
+- Dos **Promotions** con código (`BIENVENIDA10` 10% off ítems, `ENVIOGRATIS` envío gratis) para probar el input de cupón del carrito (`rodi-cart-discount` → `applyPromotions`).
+
+Si necesitás otra combinación (otros productos, otro %, otro cupón) para una demo puntual, es más rápido armarla a mano desde el Admin (`http://localhost:9000/app` → **Settings → Price Lists** / **Promotions**) que editar el script — usalo solo como base reproducible, no como fuente única.
 
 ## Storefront (`apps/storefront`)
 
