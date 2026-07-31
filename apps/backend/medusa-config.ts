@@ -27,6 +27,9 @@ module.exports = defineConfig({
       resolve: "./src/modules/zone",
     },
     {
+      resolve: "./src/modules/product-sales-count",
+    },
+    {
       resolve: "@medusajs/index",
     },
   ],

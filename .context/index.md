@@ -2,7 +2,9 @@
 
 Punto de entrada a `.context/`. Actualizar cada vez que cambie la fase activa o se shippee un feature.
 
-**Última actualización:** 2026-07-24 (dos fixes puntuales de UI, fuera del flujo de `backlog.md`: mega menú "Todas las categorías" ahora muestra todas las categorías — commit `98cb8b4` — y el modal de direcciones mantiene los botones de acción dentro del panel cuando el contenido desborda — commit `1476da3`)
+**Última actualización:** 2026-07-31 (feature "Más vendidos" implementado — módulo nuevo `product-sales-count` + link 1:1 + helper de ranking reutilizable + job diario de recomputo + `sort_by=best_selling` en `/store/products-list` + selector en el PLP; `[FEATURE/PLP-MAS-VENDIDOS]` cerrado en `backlog.md`, detalle en [docs/custom-features/best-sellers.md](../docs/custom-features/best-sellers.md))
+
+Actualización anterior — 2026-07-24 (dos fixes puntuales de UI, fuera del flujo de `backlog.md`: mega menú "Todas las categorías" ahora muestra todas las categorías — commit `98cb8b4` — y el modal de direcciones mantiene los botones de acción dentro del panel cuando el contenido desborda — commit `1476da3`)
 
 Actualización anterior — 2026-07-23 (auditoría de "Mi cuenta"/Perfil vs. diseño de referencia — ver sección "🔍 Auditoría: Sección 'Mi cuenta' vs. diseño de referencia" en `backlog.md`: `[UI/PEDIDOS]` como hallazgo principal, `[UI/DIRECCIONES]`, `[CLEANUP]` de `account-nav`, y `[FEATURE/CUENTA-FIDELIZACION]` evaluado y diferido)
 
@@ -48,8 +50,6 @@ Ver [`backlog.md`](./backlog.md) para el detalle completo. Estado al 2026-07-29:
 ## Pendientes que cruzan sesiones
 
 - **Combos (bundles de productos)**: plan de implementación completo guardado en [`plan-combos-productos.md`](./plan-combos-productos.md), a la espera de decisión de ejecución — no se ha empezado a construir. Responde al ítem `[FEATURE/COMBOS]` de `backlog.md`.
-
-- **"Más vendidos" (best sellers)**: plan de implementación completo guardado en [`plan-plp-mas-vendidos.md`](./plan-plp-mas-vendidos.md), a la espera de decisión de ejecución — no se ha empezado a construir. Diseñado explícitamente para que el cálculo de ventas por producto (módulo `product-sales-count` + helper de ranking + job de recomputo) sea reutilizable por futuras features, no solo por el sort del PLP. Responde al ítem `[FEATURE/PLP-MAS-VENDIDOS]` de `backlog.md`.
 
 - **Reviews (Fase 7)**: datos de prueba en la BD de desarrollo — cliente `review-qa@example.com` y una reseña sobre `prod_01KRYAHH1D05WP9W1EXTE47HX6`. No se ha pedido limpiarlos. Sin admin UI de moderación ni edición/borrado de reseña propia.
 - **Cuenta (Fase 8)**: cambio de contraseña y de email del cliente siguen sin implementar (restricciones reales de la API de Medusa v2, no bugs) — ver decisiones en `plans/2026-07-07/FASE-8-endurecimiento-deuda-tecnica.md`.
