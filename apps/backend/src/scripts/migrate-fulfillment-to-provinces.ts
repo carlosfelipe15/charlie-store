@@ -30,7 +30,7 @@ import {
  * so the country-level `cu` geo zone stays as the robust gate (any Cuban address
  * gets shipping options), while the province geo zones make the fulfillment model
  * province-aware ("por provincia") and ready for future per-province coverage or
- * pricing. See `.context/plan-zonas-entrega-provincia-municipio.md` (Fase C).
+ * pricing. See `.context/plans/2026-07-19/plan-zonas-entrega-provincia-municipio.md` (Fase C).
  *
  * Idempotent: provinces already present on the service zone are skipped.
  *

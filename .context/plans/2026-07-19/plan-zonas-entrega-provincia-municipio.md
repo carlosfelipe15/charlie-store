@@ -1,6 +1,8 @@
 # Plan: Zonas de entrega por Provincia/Municipio ("Entregar en")
 
-> **Estado: decisiones de negocio cerradas — listo para ejecutar la Fase 0 + Fase A.** Generado el 2026-07-19 a pedido de Carlos, tras un análisis de factibilidad sobre adaptar el manejo multi-región de Medusa a un solo país acotado por Provincias/Municipios, de modo que al elegir la zona en "Entregar en" se muestren solo los productos disponibles en esa zona. No se ha empezado a implementar código. Responde al ítem `[FEATURE/ZONAS-ENTREGA]` de [`backlog.md`](./backlog.md).
+> **Estado: ✅ COMPLETADO.** Plan histórico, archivado en `.context/plans/2026-07-19/` — Fases 0–D ejecutadas y verificadas (ver "Secuenciación en fases" abajo, con notas de ejecución inline fechadas), más el plan de cierre del 2026-07-23 y los fixes de seguimiento del 24, 25 y 28 de julio (ver `.context/backlog.md`, ítem `[FEATURE/ZONAS-ENTREGA]`). La referencia viva y actualizada de la feature es [`docs/custom-features/zones.md`](../../docs/custom-features/zones.md) — este documento queda solo como registro histórico de cómo se diseñó y secuenció el trabajo, no como fuente de verdad del estado actual.
+>
+> Generado el 2026-07-19 a pedido de Carlos, tras un análisis de factibilidad sobre adaptar el manejo multi-región de Medusa a un solo país acotado por Provincias/Municipios, de modo que al elegir la zona en "Entregar en" se muestren solo los productos disponibles en esa zona.
 >
 > **Decisiones confirmadas por Carlos el 2026-07-19** (todas cerradas — ver "Decisiones — estado" al final):
 > 1. **País objetivo: Cuba** (definitivo). Jerarquía Provincia → Municipio (15 provincias + Isla de la Juventud como pseudo-provincia). Ver "Cuba: especificidades".
@@ -218,12 +220,12 @@ Decisiones de Carlos: **cobertura por provincia (todas las 16), envío plano**.
 - **Fallback permisivo ≠ intersección simple.** Es el detalle de diseño más fácil de subestimar (ver "Nota de implementación clave"). Resolverlo en backend con datos reales antes de construir cualquier UI.
 - **La región sigue siendo una sola.** No tocar el `Region`/`regionMap`/`[countryCode]` para meter zonas — la zona es cookie + link, ortogonal a la región.
 
-## Documentación a actualizar (cuando se ejecute)
+## Documentación a actualizar (cuando se ejecute) — ✅ hecho
 
-- Nuevo `docs/custom-features/zones.md` — estructura de `brands.md`/`reviews.md`/`favorites.md`, con "Decisiones clave" (por qué no se usó `Region`, semántica de disponibilidad elegida, por qué cookie y no ruta, por qué link N–M) y tabla "Extender Zonas" con lo diferido (stock por zona, precios por zona, bulk-assign, ETA, geolocalización).
-- Nuevo `.context/plans/<fecha>/FASE-N-zonas-entrega.md` documentando la secuenciación real y las sorpresas en los puntos de riesgo.
-- `.context/backlog.md` — cerrar `[FEATURE/ZONAS-ENTREGA]` al shippear; cerrar `[UI/PDP-ENVIO]` si se enganchó el botón "Cambiar"; agregar entradas para lo diferido explícitamente.
-- `.context/index.md` — fecha, fase completada, resumen del backlog.
-- `AGENTS.md` — nueva subsección "Zones" en "Funcionalidad custom actual", paralela a Brands/Reviews/Favoritos.
+- ✅ `docs/custom-features/zones.md` — creado, estructura de `brands.md`/`reviews.md`/`favorites.md`.
+- ✅ Este archivo, archivado en `.context/plans/2026-07-19/` (en vez de un `FASE-N` numerado — Zonas nunca entró a la secuencia global de Fases 1–11, quedó siempre trackeado aparte).
+- ✅ `.context/backlog.md` — `[FEATURE/ZONAS-ENTREGA]` y `[UI/PDP-ENVIO]` con su historial de resolución completo.
+- ✅ `.context/index.md` — actualizado en cada hito.
+- ✅ `AGENTS.md` — subsección "Zones" en "Funcionalidad custom actual".
 </content>
 </invoke>

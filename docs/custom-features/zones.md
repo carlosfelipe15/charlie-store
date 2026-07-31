@@ -2,7 +2,7 @@
 
 Módulo custom `zone` que modela la geografía de entrega de Cuba (15 provincias + "Isla de la Juventud" como pseudo-provincia, 168 municipios) y la usa para tres cosas: el selector **"Entregar en"** del storefront, el filtrado de catálogo por disponibilidad de producto, y la entregabilidad del checkout. Sigue el patrón **Module → Link → Workflow → API** del resto del repo, con dos particularidades: es el primer **link N–M** (`isList: true` en ambos lados) y el primer módulo con una **relación intra-módulo** (`Province.hasMany(Municipality)`).
 
-No confundir con el módulo `Region` de Medusa (moneda/impuestos/pago) — la región del proyecto quedó fija en una sola ("Cuba", ver `.context/plan-zonas-entrega-provincia-municipio.md` Fase 0), y `zone` es un concepto ortogonal y propio de este repo.
+No confundir con el módulo `Region` de Medusa (moneda/impuestos/pago) — la región del proyecto quedó fija en una sola ("Cuba", ver `.context/plans/2026-07-19/plan-zonas-entrega-provincia-municipio.md` Fase 0), y `zone` es un concepto ortogonal y propio de este repo.
 
 ## Modelo de dominio
 
@@ -302,7 +302,7 @@ apps/storefront/src/
 
 | Doc | Contenido |
 |-----|-----------|
-| [`.context/plan-zonas-entrega-provincia-municipio.md`](../../.context/plan-zonas-entrega-provincia-municipio.md) | Plan de implementación original por fases (0–D) |
+| [`.context/plans/2026-07-19/plan-zonas-entrega-provincia-municipio.md`](../../.context/plans/2026-07-19/plan-zonas-entrega-provincia-municipio.md) | Plan de implementación original por fases (0–D), completado y archivado |
 | [`.context/geo-zones-fulfillment.md`](../../.context/geo-zones-fulfillment.md) | Estado detallado de las geo-zones de fulfillment de Medusa, qué se corrigió el 2026-07-23 y qué haría falta para tarifas reales por provincia |
 | [`.context/reports/zonas-entrega-direcciones-incongruencias-2026-07-22.md`](../../.context/reports/zonas-entrega-direcciones-incongruencias-2026-07-22.md) | Auditoría de incongruencias zona↔direcciones guardadas y mitigaciones aplicadas |
 | `.claude/plans/arma-un-plan-para-abundant-shell.md` | Plan de cierre ejecutado el 2026-07-23 (los 4 workstreams de esta doc) |

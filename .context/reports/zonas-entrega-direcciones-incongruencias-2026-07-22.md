@@ -1,6 +1,6 @@
 # Zonas de entrega ("Entregar en") vs. direcciones (envío y facturación) — auditoría
 
-> Auditoría puntual — no confiar en esto para el estado actual del código más allá de la fecha indicada, solo para el diagnóstico y las decisiones tomadas ese día. Para el diseño y la secuenciación de fases del feature de zonas, ver [`../plan-zonas-entrega-provincia-municipio.md`](../plan-zonas-entrega-provincia-municipio.md) y el ítem `[FEATURE/ZONAS-ENTREGA]` de [`../backlog.md`](../backlog.md).
+> Auditoría puntual — no confiar en esto para el estado actual del código más allá de la fecha indicada, solo para el diagnóstico y las decisiones tomadas ese día. Para el diseño y la secuenciación de fases del feature de zonas, ver [`../plans/2026-07-19/plan-zonas-entrega-provincia-municipio.md`](../plans/2026-07-19/plan-zonas-entrega-provincia-municipio.md) (completado y archivado) y el ítem `[FEATURE/ZONAS-ENTREGA]` de [`../backlog.md`](../backlog.md).
 
 **Sesión:** 2026-07-22, a pedido de Carlos. Dos pasadas el mismo día: (1) auditoría inicial zona↔direcciones + mitigación de formularios (selects reales, país fijo Cuba en envío, país libre en facturación, retiro de Empresa/Apartamento), (2) esta actualización — revisión más profunda de backend+storefront tras esos cambios, diferencia catálogo/checkout, y qué son/qué falta de las geo-zones de fulfillment.
 

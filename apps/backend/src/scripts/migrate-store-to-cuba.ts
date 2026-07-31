@@ -29,7 +29,7 @@ import {
  * Idempotent: safe to run repeatedly. Run with the backend able to reach the DB:
  *   pnpm medusa exec ./src/scripts/migrate-store-to-cuba.ts
  *
- * See `.context/plan-zonas-entrega-provincia-municipio.md` (Fase 0).
+ * See `.context/plans/2026-07-19/plan-zonas-entrega-provincia-municipio.md` (Fase 0).
  */
 export default async function migrateStoreToCuba({
   container,

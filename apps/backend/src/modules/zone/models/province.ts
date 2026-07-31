@@ -4,7 +4,7 @@ import Municipality from "./municipality";
 /**
  * A Cuban province (or the special municipality "Isla de la Juventud", modeled
  * as a pseudo-province with a single municipality so the two-level selector
- * stays uniform — see `.context/plan-zonas-entrega-provincia-municipio.md`).
+ * stays uniform — see `.context/plans/2026-07-19/plan-zonas-entrega-provincia-municipio.md`).
  *
  * Provinces are the *grouping* level of the "Entregar en" picker; the operative
  * delivery zone is the Municipality. Product availability is linked at the

@@ -18,7 +18,7 @@ type Province = { id: string; name: string; code: string; municipalities: Munici
 
 /**
  * Assigns a product to one or more delivery municipalities (Fase D of the
- * zones feature — see .context/plan-zonas-entrega-provincia-municipio.md).
+ * zones feature — see .context/plans/2026-07-19/plan-zonas-entrega-provincia-municipio.md).
  * Reconciled via the existing `setProductZonesWorkflow`
  * (apps/backend/src/workflows/set-product-zones.ts), previously only
  * invoked from `scripts/seed-zones.ts`. Empty selection = available

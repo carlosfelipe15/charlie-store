@@ -10,7 +10,7 @@ import ZoneModuleService from "../modules/zone/service";
  * Seeds Cuba's delivery zones: the 15 provinces + "Isla de la Juventud" (a
  * special municipality with no province, modeled here as a pseudo-province of a
  * single municipality so the Province → Municipality selector stays uniform —
- * see `.context/plan-zonas-entrega-provincia-municipio.md`).
+ * see `.context/plans/2026-07-19/plan-zonas-entrega-provincia-municipio.md`).
  *
  * Municipality list follows the standard ONEI political division (168 municipios
  * incl. Isla de la Juventud). If exact precision matters, re-validate against an
