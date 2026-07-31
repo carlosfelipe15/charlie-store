@@ -43,7 +43,9 @@ const AddressSelect = ({
             <>
               <span className="block truncate">
                 {selectedAddress
-                  ? selectedAddress.address_1
+                  ? selectedAddress.address_name
+                    ? `${selectedAddress.address_name} · ${selectedAddress.address_1}`
+                    : selectedAddress.address_1
                   : "Elige una dirección"}
               </span>
               <ChevronUpDown
@@ -78,6 +80,11 @@ const AddressSelect = ({
                       data-testid="shipping-address-radio"
                     />
                     <div className="flex flex-col">
+                      {address.address_name && (
+                        <span className="text-left text-small-regular text-ui-fg-subtle uppercase tracking-wide">
+                          {address.address_name}
+                        </span>
+                      )}
                       <span className="text-left text-base-semi">
                         {address.first_name} {address.last_name}
                       </span>

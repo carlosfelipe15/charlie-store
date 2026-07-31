@@ -176,6 +176,9 @@ export const addCustomerAddress = async (
   const isDefaultShipping = (currentState.isDefaultShipping as boolean) || false
 
   const address = {
+    // Optional per-address label the customer picks ("Casa", "Oficina") —
+    // native Medusa core field on CustomerAddress, no custom migration.
+    address_name: (formData.get("address_name") as string) || null,
     first_name: formData.get("first_name") as string,
     last_name: formData.get("last_name") as string,
     // "Nota para la entrega" reuses address_2 — no company field for a
@@ -241,6 +244,7 @@ export const updateCustomerAddress = async (
   }
 
   const address = {
+    address_name: (formData.get("address_name") as string) || null,
     first_name: formData.get("first_name") as string,
     last_name: formData.get("last_name") as string,
     address_2: formData.get("address_2") as string,

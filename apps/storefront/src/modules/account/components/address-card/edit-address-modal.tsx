@@ -12,7 +12,8 @@ import { SubmitButton } from "@modules/checkout/components/submit-button"
 import Input from "@modules/common/components/input"
 import Modal from "@modules/common/components/modal"
 import NativeSelect from "@modules/common/components/native-select"
-import { Button, Heading, Text, clx } from "@modules/common/components/ui"
+import { RodiBtn } from "@modules/common/components/rodi"
+import { clx } from "@modules/common/components/ui"
 import Spinner from "@modules/common/icons/spinner"
 import React, { useActionState, useEffect, useMemo, useState } from "react"
 
@@ -75,21 +76,29 @@ const EditAddress: React.FC<EditAddressProps> = ({
     <>
       <div
         className={clx(
-          "border rounded-rounded p-5 min-h-[220px] h-full w-full flex flex-col justify-between transition-colors",
+          "border border-rm-line rounded-rm-lg p-5 min-h-[220px] h-full w-full flex flex-col justify-between transition-colors bg-rm-paper",
           {
-            "border-gray-900": isActive,
+            "border-rm-ink": isActive,
           }
         )}
         data-testid="address-container"
       >
         <div className="flex flex-col">
-          <Heading
-            className="text-left text-base-semi"
+          {address.address_name && (
+            <span
+              className="text-small-regular text-rm-ink-3 uppercase tracking-wide mb-1"
+              data-testid="address-nickname"
+            >
+              {address.address_name}
+            </span>
+          )}
+          <h3
+            className="text-left font-bold text-rm-ink"
             data-testid="address-name"
           >
             {address.first_name} {address.last_name}
-          </Heading>
-          <Text className="flex flex-col text-left text-base-regular mt-2">
+          </h3>
+          <p className="flex flex-col text-left text-base-regular text-rm-ink-2 mt-2">
             <span data-testid="address-address">
               {address.address_1}
               {address.address_2 && <span>, {address.address_2}</span>}
@@ -100,11 +109,11 @@ const EditAddress: React.FC<EditAddressProps> = ({
             <span data-testid="address-province-country">
               {address.province}
             </span>
-          </Text>
+          </p>
         </div>
         <div className="flex items-center gap-x-4">
           <button
-            className="text-small-regular text-ui-fg-base flex items-center gap-x-2"
+            className="text-small-regular text-rm-ink-2 hover:text-rm-ink flex items-center gap-x-2"
             onClick={open}
             data-testid="address-edit-button"
           >
@@ -112,7 +121,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
             Editar
           </button>
           <button
-            className="text-small-regular text-ui-fg-base flex items-center gap-x-2"
+            className="text-small-regular text-rm-ink-2 hover:text-rm-red flex items-center gap-x-2"
             onClick={removeAddress}
             data-testid="address-delete-button"
           >
@@ -123,9 +132,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
       </div>
 
       <Modal isOpen={state} close={close} data-testid="edit-address-modal">
-        <Modal.Title>
-          <Heading className="mb-2">Editar dirección</Heading>
-        </Modal.Title>
+        <Modal.Title>Editar dirección</Modal.Title>
         <form
           action={formAction}
           className="flex flex-col flex-1 min-h-0 overflow-hidden"
@@ -133,6 +140,12 @@ const EditAddress: React.FC<EditAddressProps> = ({
           <input type="hidden" name="addressId" value={address.id} />
           <Modal.Body>
             <div className="grid grid-cols-1 gap-y-2">
+              <Input
+                label="Apodo (opcional, ej. Casa, Oficina)"
+                name="address_name"
+                defaultValue={address.address_name || undefined}
+                data-testid="address-name-input"
+              />
               <div className="grid grid-cols-2 gap-x-2">
                 <Input
                   label="Nombre"
@@ -222,22 +235,22 @@ const EditAddress: React.FC<EditAddressProps> = ({
               </div>
             </div>
             {formState.error && (
-              <div className="text-rose-500 text-small-regular py-2">
+              <div className="text-rm-red text-small-regular py-2">
                 {formState.error}
               </div>
             )}
           </Modal.Body>
           <Modal.Footer>
             <div className="flex gap-3 mt-6">
-              <Button
+              <RodiBtn
                 type="reset"
-                variant="secondary"
+                kind="ghost"
                 onClick={close}
                 className="h-10"
                 data-testid="cancel-button"
               >
                 Cancelar
-              </Button>
+              </RodiBtn>
               <SubmitButton data-testid="save-button">Guardar</SubmitButton>
             </div>
           </Modal.Footer>
