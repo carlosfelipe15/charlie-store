@@ -15,6 +15,10 @@ const IncludeFacetsField = z
     .union([z.literal("true"), z.boolean()])
     .optional()
     .transform((v) => v === true || v === "true");
+// Deliberately not core's `order` param — that's validated against product's
+// own real column whitelist, and `best_selling` isn't one (resolved in
+// route.ts against the product-sales-count module instead).
+const SortByField = z.enum(["best_selling"]).optional();
 
 /**
  * Core's StoreGetProductsParams ends in `.strict().transform(...)`, so it
@@ -27,7 +31,7 @@ const IncludeFacetsField = z
  */
 export const StoreGetProductsListParams = z.any().transform((raw, ctx) => {
     const input = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
-    const { brand_id, tag_id, zone_id, rating_gte, on_sale, include_facets, ...rest } = input;
+    const { brand_id, tag_id, zone_id, rating_gte, on_sale, include_facets, sort_by, ...rest } = input;
 
     const brandResult = BrandIdField.safeParse(brand_id);
     if (!brandResult.success) {
@@ -65,6 +69,12 @@ export const StoreGetProductsListParams = z.any().transform((raw, ctx) => {
         return z.NEVER;
     }
 
+    const sortByResult = SortByField.safeParse(sort_by);
+    if (!sortByResult.success) {
+        sortByResult.error.issues.forEach((issue) => ctx.addIssue(issue as z.IssueData));
+        return z.NEVER;
+    }
+
     const coreResult = CoreStoreGetProductsParams.safeParse(rest);
     if (!coreResult.success) {
         coreResult.error.issues.forEach((issue) => ctx.addIssue(issue as z.IssueData));
@@ -79,6 +89,7 @@ export const StoreGetProductsListParams = z.any().transform((raw, ctx) => {
         rating_gte: ratingResult.data,
         on_sale: onSaleResult.data,
         include_facets: includeFacetsResult.data,
+        sort_by: sortByResult.data,
     };
 });
 

@@ -5,6 +5,7 @@ import { wrapVariantsWithInventoryQuantityForSalesChannel } from "@medusajs/medu
 import { wrapProductsWithTaxPrices } from "@medusajs/medusa/api/store/products/helpers";
 import { StoreRequestWithContext } from "@medusajs/medusa/api/store/types";
 import { getZoneEligibleProductIds } from "../../../modules/zone/utils/product-eligibility";
+import { getProductSalesRanking, rankProductIds } from "../../../modules/product-sales-count/utils/get-product-sales-ranking";
 
 type ProductsRequest = StoreRequestWithContext<HttpTypes.StoreProductListParams>;
 
@@ -83,6 +84,18 @@ export const GET = async (req: ProductsRequest, res: MedusaResponse) => {
         context.variants.calculated_price ??= QueryContext(pricingContext as Record<string, unknown>);
     }
 
+    // Shared between the default branch and the `best_selling` branch below,
+    // so the two fetch paths never drift apart on inventory/tax wrapping.
+    const applyProductPostProcessing = async (products: any[]) => {
+        if (withInventoryQuantity) {
+            await wrapVariantsWithInventoryQuantityForSalesChannel(
+                req,
+                products.map((product: any) => product.variants).flat(1)
+            );
+        }
+        await wrapProductsWithTaxPrices(req, products as unknown as HttpTypes.StoreProduct[]);
+    };
+
     const filters: Record<string, any> = { ...req.filterableFields };
     const brandIds = filters.brand_id;
     delete filters.brand_id;
@@ -96,6 +109,8 @@ export const GET = async (req: ProductsRequest, res: MedusaResponse) => {
     delete filters.zone_id;
     const includeFacets = filters.include_facets === true;
     delete filters.include_facets;
+    const sortBy = filters.sort_by;
+    delete filters.sort_by;
     // Snapshot of the "scope" filters (category, status, sales channel, q) —
     // everything except the sidebar's own dimensions (brand/tag/rating/on_sale)
     // — used below to compute facet counts that don't collapse to 0 just
@@ -272,6 +287,72 @@ export const GET = async (req: ProductsRequest, res: MedusaResponse) => {
             : matchedIds;
     }
 
+    // "Más vendidos" sort — a ranking over the persisted `product_sales_count`
+    // table, not a native product column, so it can't go through
+    // `pagination.order`. Resolves the full eligible universe (respecting
+    // every filter already applied above), ranks it, slices the requested
+    // page from the ranked id array, then fetches just that page — real,
+    // exact pagination (the table is small/cheap to rank in full), unlike
+    // the storefront's price sort which windows in memory.
+    if (sortBy === "best_selling") {
+        const { data: eligibleProducts } = await query.graph({
+            entity: "product",
+            fields: ["id"],
+            filters,
+            pagination: { take: 1000, skip: 0 },
+        });
+
+        const eligibleIds = (eligibleProducts as any[]).map((product) => product.id);
+        const salesRanking = await getProductSalesRanking(req.scope, {
+            productIds: eligibleIds,
+        });
+        const rankedIds = rankProductIds(eligibleIds, salesRanking);
+
+        const skip = req.queryConfig.pagination?.skip ?? 0;
+        const take = req.queryConfig.pagination?.take ?? rankedIds.length;
+        const pageIds = rankedIds.slice(skip, skip + take);
+
+        if (pageIds.length === 0) {
+            return res.json({
+                products: [],
+                count: rankedIds.length,
+                offset: skip,
+                limit: take,
+                facets,
+            } as any);
+        }
+
+        const { data: pageProducts = [] } = await query.graph(
+            {
+                entity: "product",
+                fields: req.queryConfig.fields,
+                filters: { id: pageIds },
+                context,
+            },
+            {
+                cache: { enable: true },
+                locale: req.locale,
+            }
+        );
+
+        // Postgres doesn't preserve the `id` filter array's order — re-order
+        // in JS to match the ranked page.
+        const rankById = new Map(pageIds.map((id, index) => [id, index]));
+        const orderedProducts = [...(pageProducts as any[])].sort(
+            (a, b) => rankById.get(a.id)! - rankById.get(b.id)!
+        );
+
+        await applyProductPostProcessing(orderedProducts);
+
+        return res.json({
+            products: orderedProducts,
+            count: rankedIds.length,
+            offset: skip,
+            limit: take,
+            facets,
+        } as any);
+    }
+
     const { data: products = [], metadata } = await query.graph(
         {
             entity: "product",
@@ -286,14 +367,7 @@ export const GET = async (req: ProductsRequest, res: MedusaResponse) => {
         }
     );
 
-    if (withInventoryQuantity) {
-        await wrapVariantsWithInventoryQuantityForSalesChannel(
-            req,
-            products.map((product: any) => product.variants).flat(1)
-        );
-    }
-
-    await wrapProductsWithTaxPrices(req, products as unknown as HttpTypes.StoreProduct[]);
+    await applyProductPostProcessing(products);
 
     res.json({
         products,
