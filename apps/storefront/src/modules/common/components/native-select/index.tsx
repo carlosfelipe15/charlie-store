@@ -68,10 +68,10 @@ const NativeSelect = forwardRef<HTMLSelectElement, NativeSelectProps>(
           onFocus={() => innerRef.current?.focus()}
           onBlur={() => innerRef.current?.blur()}
           className={clx(
-            "relative flex items-center text-base-regular border border-ui-border-base bg-ui-bg-subtle rounded-md hover:bg-ui-bg-field-hover",
+            "relative flex items-center text-base-regular border-[1.5px] border-rm-line bg-rm-paper rounded-lg focus-within:border-rm-ink",
             className,
             {
-              "text-ui-fg-muted": isPlaceholder && !label,
+              "text-rm-ink-3": isPlaceholder && !label,
             }
           )}
         >
@@ -102,7 +102,7 @@ const NativeSelect = forwardRef<HTMLSelectElement, NativeSelectProps>(
             <label
               onClick={() => innerRef.current?.focus()}
               className={clx(
-                "flex items-center mx-3 px-1 absolute transition-all duration-300 origin-0 text-ui-fg-subtle pointer-events-none",
+                "flex items-center mx-3 px-1 absolute transition-all duration-300 origin-0 text-rm-ink-3 pointer-events-none",
                 floated
                   ? "top-3 -translate-y-2 text-xsmall-regular"
                   : "top-3",
@@ -110,7 +110,7 @@ const NativeSelect = forwardRef<HTMLSelectElement, NativeSelectProps>(
               )}
             >
               {label}
-              {required && <span className="text-rose-500">*</span>}
+              {required && <span className="text-rm-red">*</span>}
             </label>
           )}
           <span className="absolute right-4 inset-y-0 flex items-center pointer-events-none ">
