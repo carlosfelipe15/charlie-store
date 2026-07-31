@@ -17,13 +17,15 @@ const ProfilePassword: React.FC<MyInformationProps> = () => {
     <div className="w-full" data-testid="account-password-editor">
       <div className="flex items-end justify-between text-small-regular">
         <div className="flex flex-col">
-          <span className="uppercase text-ui-fg-base">Contraseña</span>
-          <span className="font-semibold" data-testid="current-info">
+          <span className="uppercase text-[11px] font-extrabold text-rm-ink-3 tracking-wider">
+            Contraseña
+          </span>
+          <span className="font-semibold text-rm-ink" data-testid="current-info">
             La contraseña no se muestra por seguridad
           </span>
         </div>
       </div>
-      <p className="text-xs text-ui-fg-subtle mt-1.5">
+      <p className="text-xs text-rm-ink-3 mt-1.5">
         El cambio de contraseña desde el perfil aún no está disponible.
         Escríbenos si necesitas restablecerla.
       </p>

@@ -13,15 +13,15 @@ const ProfileEmail: React.FC<MyInformationProps> = ({ customer }) => {
     <div className="w-full" data-testid="account-email-editor">
       <div className="flex items-end justify-between text-small-regular">
         <div className="flex flex-col">
-          <span className="uppercase text-ui-fg-base">
+          <span className="uppercase text-[11px] font-extrabold text-rm-ink-3 tracking-wider">
             Correo electrónico
           </span>
-          <span className="font-semibold" data-testid="current-info">
+          <span className="font-semibold text-rm-ink" data-testid="current-info">
             {customer.email}
           </span>
         </div>
       </div>
-      <p className="text-xs text-ui-fg-subtle mt-1.5">
+      <p className="text-xs text-rm-ink-3 mt-1.5">
         El correo de acceso no se puede cambiar desde aquí por el momento.
         Escríbenos si necesitas actualizarlo.
       </p>

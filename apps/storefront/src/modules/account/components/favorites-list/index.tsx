@@ -16,7 +16,7 @@ export default async function FavoritesList({
   if (!favorites.length) {
     return (
       <div className="flex flex-col items-center gap-y-4 py-16 text-center">
-        <p className="text-base-regular text-ui-fg-subtle">
+        <p className="text-base-regular text-rm-ink-2">
           Todavía no guardaste ningún producto en favoritos.
         </p>
         <RodiBtnLink href="/store" kind="primary">

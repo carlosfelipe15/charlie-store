@@ -22,9 +22,11 @@ export default async function Profile() {
 
   return (
     <div className="w-full" data-testid="profile-page-wrapper">
-      <div className="mb-8 flex flex-col gap-y-4">
-        <h1 className="text-2xl-semi">Perfil</h1>
-        <p className="text-base-regular">
+      <div className="mb-8 flex flex-col gap-y-2">
+        <h1 className="font-display text-2xl font-extrabold tracking-tight text-rm-ink">
+          Perfil
+        </h1>
+        <p className="text-sm text-rm-ink-2">
           Consulta y actualiza la información de tu perfil, incluyendo tu
           nombre, correo electrónico y teléfono. También puedes actualizar tu
           dirección de facturación o cambiar tu contraseña.
@@ -46,5 +48,5 @@ export default async function Profile() {
 }
 
 const Divider = () => {
-  return <div className="w-full h-px bg-gray-200" />
+  return <div className="w-full h-px bg-rm-line" />
 }

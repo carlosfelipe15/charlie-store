@@ -1,5 +1,6 @@
 import { Disclosure } from "@headlessui/react"
-import { Badge, Button, clx } from "@modules/common/components/ui"
+import { clx } from "@modules/common/components/ui"
+import { RodiBtn } from "@modules/common/components/rodi"
 import { useEffect } from "react"
 
 import useToggleState from "@lib/hooks/use-toggle-state"
@@ -45,26 +46,34 @@ const AccountInfo = ({
     <div className="text-small-regular" data-testid={dataTestid}>
       <div className="flex items-end justify-between">
         <div className="flex flex-col">
-          <span className="uppercase text-ui-fg-base">{label}</span>
+          <span className="uppercase text-[11px] font-extrabold text-rm-ink-3 tracking-wider">
+            {label}
+          </span>
           <div className="flex items-center flex-1 basis-0 justify-end gap-x-4">
             {typeof currentInfo === "string" ? (
-              <span className="font-semibold" data-testid="current-info">{currentInfo}</span>
+              <span
+                className="font-semibold text-rm-ink"
+                data-testid="current-info"
+              >
+                {currentInfo}
+              </span>
             ) : (
               currentInfo
             )}
           </div>
         </div>
         <div>
-          <Button
-            variant="secondary"
-            className="w-[100px] min-h-[25px] py-1"
+          <RodiBtn
+            kind="ghost"
+            size="sm"
+            className="w-[100px]"
             onClick={handleToggle}
             type={state ? "reset" : "button"}
             data-testid="edit-button"
             data-active={state}
           >
             {state ? "Cancelar" : "Editar"}
-          </Button>
+          </RodiBtn>
         </div>
       </div>
 
@@ -81,9 +90,9 @@ const AccountInfo = ({
           )}
           data-testid="success-message"
         >
-          <Badge className="p-2 my-4" color="green">
-            <span>{label} actualizado correctamente</span>
-          </Badge>
+          <span className="inline-flex items-center rounded-rm-pill px-3 py-1.5 my-4 text-sm font-semibold bg-rm-s-mint text-rm-green">
+            {label} actualizado correctamente
+          </span>
         </Disclosure.Panel>
       </Disclosure>
 
@@ -100,9 +109,9 @@ const AccountInfo = ({
           )}
           data-testid="error-message"
         >
-          <Badge className="p-2 my-4" color="red">
-            <span>{errorMessage}</span>
-          </Badge>
+          <span className="inline-flex items-center rounded-rm-pill px-3 py-1.5 my-4 text-sm font-semibold bg-rm-s-pink text-rm-red">
+            {errorMessage}
+          </span>
         </Disclosure.Panel>
       </Disclosure>
 
@@ -120,14 +129,14 @@ const AccountInfo = ({
           <div className="flex flex-col gap-y-2 py-4">
             <div>{children}</div>
             <div className="flex items-center justify-end mt-2">
-              <Button
-                isLoading={pending}
+              <RodiBtn
+                disabled={pending}
                 className="w-full small:max-w-[140px]"
                 type="submit"
                 data-testid="save-button"
               >
-                Guardar cambios
-              </Button>
+                {pending ? "Procesando…" : "Guardar cambios"}
+              </RodiBtn>
             </div>
           </div>
         </Disclosure.Panel>

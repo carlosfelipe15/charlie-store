@@ -25,9 +25,11 @@ export default async function Favorites(props: {
 
   return (
     <div className="w-full" data-testid="favorites-page-wrapper">
-      <div className="mb-8 flex flex-col gap-y-4">
-        <h1 className="text-2xl-semi">Tus favoritos</h1>
-        <p className="text-base-regular">
+      <div className="mb-8 flex flex-col gap-y-2">
+        <h1 className="font-display text-2xl font-extrabold tracking-tight text-rm-ink">
+          Tus favoritos
+        </h1>
+        <p className="text-sm text-rm-ink-2">
           Productos que guardaste para más tarde.
         </p>
       </div>

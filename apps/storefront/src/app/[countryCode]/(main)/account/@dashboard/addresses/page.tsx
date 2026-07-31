@@ -28,9 +28,11 @@ export default async function Addresses(props: {
 
   return (
     <div className="w-full" data-testid="addresses-page-wrapper">
-      <div className="mb-8 flex flex-col gap-y-4">
-        <h1 className="text-2xl-semi">Direcciones de envío</h1>
-        <p className="text-base-regular">
+      <div className="mb-8 flex flex-col gap-y-2">
+        <h1 className="font-display text-2xl font-extrabold tracking-tight text-rm-ink">
+          Direcciones de envío
+        </h1>
+        <p className="text-sm text-rm-ink-2">
           Consulta y actualiza tus direcciones de envío; puedes agregar tantas
           como quieras. Guardar tus direcciones las hará disponibles durante el
           checkout.

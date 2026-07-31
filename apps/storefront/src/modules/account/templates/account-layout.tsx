@@ -19,16 +19,16 @@ const AccountLayout = ({ customer, children }: AccountLayoutProps) => {
   }
 
   return (
-    <div className="py-8 content-container" data-testid="account-page">
+    <div className="pt-1 pb-8 content-container" data-testid="account-page">
       <RodiBreadcrumbs
         items={[
           { label: "Inicio", href: "/" },
           { label: "Mi cuenta" },
         ]}
       />
-      <header className="mt-2 mb-8">
+      <header className="mt-1 mb-5">
         <h1 className="font-display text-3xl small:text-4xl font-extrabold tracking-tight text-rm-ink m-0">
-          Hola, {name} 👋
+          Hola, {name}
         </h1>
         <p className="text-sm text-rm-ink-2 mt-2">
           Sesión:{" "}
